@@ -7,6 +7,7 @@ Frontend for tracking immersion sessions while learning a language. Uses Next.js
 - Backend: separate repository. OpenAPI is served at `<backend-url>:4000/api-json`, locally `http://localhost:4000/api-json`.
 - Generate TanStack React Query hooks, models, and MSW mocks with `bun run api:generate`. Configure `OPENAPI_URL` and `NEXT_PUBLIC_API_URL` in `.env.local`; see `.env.example`. Never hand-edit `lib/api/generated`.
 - Use Zod for form validation.
+- Keep README documentation concise and focused on setup for new developers. Avoid code walkthroughs and explanations of implementation internals.
 - For test selection, implementation, and review, use the local [testing skill](.agents/skills/testing/SKILL.md).
 
 <!-- BEGIN:nextjs-agent-rules -->
