@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Immersion Tracker
 
-## Getting Started
+Frontend for tracking immersion sessions while learning a language. Built with Next.js App Router, Tailwind CSS, shadcn (Base UI), TanStack React Query, and Zod. Designs live in the Penpot file **Immersion tracker**.
 
-First, run the development server:
+## Development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Use Bun and Node.js 24+ for the tooling.
+
+```sh
+bun install
+cp .env.example .env.local
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend runs at http://localhost:3000. Browser API requests go directly to `NEXT_PUBLIC_API_URL` (default `http://localhost:4000`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Use shadcn components where supported and Zod for form validation.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API generation
 
-## Learn More
+With the backend running:
 
-To learn more about Next.js, take a look at the following resources:
+```sh
+bun run api:generate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Orval loads Next.js environment files and reads `OPENAPI_URL` (default `http://localhost:4000/api-json`). It generates React Query hooks, models, and MSW handlers into `lib/api/generated`. Commit these files with API changes; do not edit them manually. Builds and tests use committed output and do not require a running backend.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`NEXT_PUBLIC_API_URL` controls browser requests independently of generation; use an origin without a trailing slash. Next.js embeds public environment variables at build time, so set this value before building for deployment.
 
-## Deploy on Vercel
+The root Query provider supplies the application's QueryClient. Generated hooks accept request options, including headers and cancellation. The shared fetch transport throws `ApiError` with `status` and `body` for non-success responses and handles empty responses.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tests and checks
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sh
+bun run test                 # All Vitest tests, once
+bun run test:watch           # Watch mode
+bun run test:unit            # Node: *.test.ts
+bun run test:integration     # jsdom + React Testing Library + MSW: *.test.tsx
+bun run typecheck
+bun run lint
+bun run build
+```
+
+Use `bun run test`, rather than Bun's built-in `bun test`, to run Vitest.
+
+The integration example in `test/api-query.test.tsx` exercises a real generated hook with explicit MSW fixtures, including an HTTP failure and retry. Reuse `test/render.tsx` for isolated QueryClients and `test/server.ts` to register handlers. Unexpected requests fail tests. Async Server Components are not supported by this Vitest setup.
+
+Testing decisions and practices live in the local [testing skill](.agents/skills/testing/SKILL.md).
+
+## End-to-end testing
+
+Playwright is configured for Chromium under `e2e/`; there are no journey tests yet. Before the first run, install its browser:
+
+```sh
+bunx playwright install chromium
+bun run test:e2e
+```
+
+Playwright starts the development server locally and builds/starts the production app when `CI` is set. Locally it can reuse a running server. Failures retain traces and screenshots under ignored test artifacts. Add journey tests when requested or agreed for a feature; running the command before any tests exist reports "No tests found".
