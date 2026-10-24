@@ -15,6 +15,8 @@ Choose unit and component integration tests autonomously based on the behavior c
 
 ## Choose the useful boundary
 
+- When writing or reviewing a test, ask: “Could this test pass while the feature is visibly broken?” If so, assert the user’s expected outcome. For example, when changing a filter, return distinct response data and verify that the displayed values update, alongside any useful request assertions. Choose fixture values that expose plausible mix-ups, such as IDs versus codes or reading versus audiovisual time. Focus on likely mistakes rather than asserting everything.
+- Test lasting, relevant application behavior. Do not add assertions for temporary placeholders or scaffolding, such as “not implemented yet” toasts. When testing nearby interactions, exercise real navigation or established behavior so completing a feature does not invalidate unrelated tests.
 - Use Vitest unit tests for calculations, domain rules, validation decisions, and boundary cases. Avoid tests that merely forward arguments to an SDK, duplicate generated code, or assert implementation details.
 - Use React Testing Library component integration tests for observable behavior across components, forms, generated hooks, and API responses. Intercept HTTP with MSW rather than mocking React Query hooks or fetch. Cover relevant loading, empty, success, validation, failure, and recovery behavior; select scenarios that matter to the feature.
 - Use Playwright for complete user journeys. Async Server Components cannot be tested with this Vitest setup; explain when that leaves a meaningful browser coverage gap and propose a journey test.

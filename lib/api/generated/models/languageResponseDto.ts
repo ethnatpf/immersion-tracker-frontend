@@ -11,4 +11,6 @@ export interface LanguageResponseDto {
   id: string;
   code: string;
   name: string;
+  /** Language name in its native language */
+  nativeName: string;
 }

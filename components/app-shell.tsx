@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ApiErrorBoundary } from "@/components/error/api-error-boundary";
 
 function Brand({ mobile = false }: { mobile?: boolean }) {
   return (
@@ -94,6 +95,7 @@ function Navigation({ mobile = false, onSelect }: { mobile?: boolean; onSelect?:
 
 export function AppShell({ children, email }: { children: ReactNode; email?: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
   return (
     <div className="min-h-dvh bg-background">
       <a href="#main-content" className="sr-only z-[60] rounded-lg bg-white p-3 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
@@ -119,7 +121,7 @@ export function AppShell({ children, email }: { children: ReactNode; email?: str
       </header>
       <div className="relative min-h-[calc(100dvh-88px)] bg-[#f6f8f7] md:ml-[220px] md:min-h-dvh">
         <div className="absolute right-10 top-[38px] hidden md:block"><ProfileMenu email={email} /></div>
-        <main id="main-content" tabIndex={-1} className="min-w-0 px-5 py-7 outline-none md:px-10 md:py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 px-5 py-[22px] outline-none md:px-10 md:py-8"><ApiErrorBoundary key={pathname}>{children}</ApiErrorBoundary></main>
       </div>
     </div>
   );

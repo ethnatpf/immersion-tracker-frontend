@@ -13,7 +13,7 @@ export default defineConfig({
       httpClient: "fetch",
       mode: "single",
       clean: true,
-      baseUrl: { runtime: "process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'" },
+      baseUrl: "/api/backend",
       mock: { generators: [{ type: "msw", delay: false }] },
       override: {
         mutator: { path: "./lib/api/fetch.ts", name: "apiFetch" },

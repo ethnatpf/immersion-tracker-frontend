@@ -12,7 +12,7 @@ cp .env.example .env.local
 bun run dev
 ```
 
-The frontend runs at http://localhost:3000. Browser API requests go directly to `NEXT_PUBLIC_API_URL` (default `http://localhost:4000`).
+The frontend runs at http://localhost:3000. Set `API_URL` to the backend origin (default `http://localhost:4000`). Browser API requests use `/api/backend`, an authenticated server proxy that adds the Auth0 bearer token.
 
 Use shadcn components where supported and Zod for form validation.
 
@@ -26,9 +26,11 @@ Use an Auth0 **Regular Web Application** with **New Universal Login**. Configure
 | Allowed Logout URLs | `http://localhost:3000` |
 | Allowed Web Origins | `http://localhost:3000` |
 
-Fill in the Auth0 variables in `.env.local` using `.env.example` and your application's settings. Use the hostname only for `AUTH0_DOMAIN`. Generate `AUTH0_SECRET` with `openssl rand -hex 32`, then restart the dev server.
+Fill in the Auth0 variables in `.env.local` using `.env.example` and your application's settings. Use the hostname only for `AUTH0_DOMAIN`. Set `AUTH0_AUDIENCE` to the Auth0 API Identifier matching the backend's `AUTH_AUDIENCE`. Generate `AUTH0_SECRET` with `openssl rand -hex 32`, then restart the dev server. Sign out and in again after changing the audience so the session has an API access token.
 
 For deployment, use your HTTPS origin for `APP_BASE_URL` and the URLs registered in Auth0.
+
+When using an Auth0 custom domain, the backend's `AUTH_ISSUER_BASE_URL` must match that domain (for example, `https://auth.example.com/`). The API audience stays the same.
 
 ## API generation
 
@@ -40,7 +42,7 @@ bun run api:generate
 
 Orval loads Next.js environment files and reads `OPENAPI_URL` (default `http://localhost:4000/api-json`). It generates React Query hooks, models, and MSW handlers into `lib/api/generated`. Commit these files with API changes; do not edit them manually. Builds and tests use committed output and do not require a running backend.
 
-`NEXT_PUBLIC_API_URL` controls browser requests independently of generation; use an origin without a trailing slash. Next.js embeds public environment variables at build time, so set this value before building for deployment.
+The SDK uses the relative `/api/backend` path. `API_URL` is server-only and can be configured at runtime without rebuilding the browser bundle.
 
 ## Tests and checks
 

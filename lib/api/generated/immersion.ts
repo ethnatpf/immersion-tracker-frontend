@@ -77,7 +77,7 @@ export const getImmersionSessionHistoryUrl = (params?: ImmersionSessionHistoryPa
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/immersion-session?${stringifiedParams}` : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/immersion-session`
+  return stringifiedParams.length > 0 ? `/api/backend/immersion-session?${stringifiedParams}` : `/api/backend/immersion-session`
 }
 
 export const immersionSessionHistory = async (params?: ImmersionSessionHistoryParams, options?: Parameters<typeof apiFetch>[1]): Promise<SessionHistoryResponseDto> => {
@@ -97,7 +97,7 @@ export const immersionSessionHistory = async (params?: ImmersionSessionHistoryPa
 
 export const getImmersionSessionHistoryQueryKey = (params?: ImmersionSessionHistoryParams,) => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/immersion-session`, ...(params ? [params] : [])
+    `/api/backend/immersion-session`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -172,7 +172,7 @@ export const getImmersionSessionCreateUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/immersion-session`
+  return `/api/backend/immersion-session`
 }
 
 export const immersionSessionCreate = async (createImmersionSessionDto: CreateImmersionSessionDto, options?: Parameters<typeof apiFetch>[1]): Promise<ImmersionSessionResponseDto> => {
@@ -254,7 +254,7 @@ export const getImmersionSessionDeleteUrl = (id: string,) => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/immersion-session/${id}`
+  return `/api/backend/immersion-session/${id}`
 }
 
 export const immersionSessionDelete = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<void> => {
@@ -322,7 +322,7 @@ export const getImmersionSessionUpdateUrl = (id: string,) => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/immersion-session/${id}`
+  return `/api/backend/immersion-session/${id}`
 }
 
 export const immersionSessionUpdate = async (id: string,
@@ -405,7 +405,7 @@ export const getLanguageListUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/language`
+  return `/api/backend/language`
 }
 
 export const languageList = async ( options?: Parameters<typeof apiFetch>[1]): Promise<LanguageResponseDto[]> => {
@@ -425,7 +425,7 @@ export const languageList = async ( options?: Parameters<typeof apiFetch>[1]): P
 
 export const getLanguageListQueryKey = () => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/language`
+    `/api/backend/language`
     ] as const;
     }
 
@@ -507,7 +507,7 @@ export const getContentSearchUrl = (params?: ContentSearchParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content/search?${stringifiedParams}` : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content/search`
+  return stringifiedParams.length > 0 ? `/api/backend/content/search?${stringifiedParams}` : `/api/backend/content/search`
 }
 
 export const contentSearch = async (params?: ContentSearchParams, options?: Parameters<typeof apiFetch>[1]): Promise<ContentSearchResponseDto> => {
@@ -527,7 +527,7 @@ export const contentSearch = async (params?: ContentSearchParams, options?: Para
 
 export const getContentSearchQueryKey = (params?: ContentSearchParams,) => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content/search`, ...(params ? [params] : [])
+    `/api/backend/content/search`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -602,7 +602,7 @@ export const getContentDetailsUrl = (id: string,) => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content/${id}`
+  return `/api/backend/content/${id}`
 }
 
 export const contentDetails = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<ContentDetailsResponseDto> => {
@@ -622,7 +622,7 @@ export const contentDetails = async (id: string, options?: Parameters<typeof api
 
 export const getContentDetailsQueryKey = (id: string,) => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content/${id}`
+    `/api/backend/content/${id}`
     ] as const;
     }
 
@@ -697,7 +697,7 @@ export const getContentUpdateUrl = (id: string,) => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content/${id}`
+  return `/api/backend/content/${id}`
 }
 
 export const contentUpdate = async (id: string,
@@ -780,7 +780,7 @@ export const getContentCreateUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/content`
+  return `/api/backend/content`
 }
 
 export const contentCreate = async (createContentDto: CreateContentDto, options?: Parameters<typeof apiFetch>[1]): Promise<ContentResponseDto> => {
@@ -862,7 +862,7 @@ export const getTimerCurrentUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/timer`
+  return `/api/backend/timer`
 }
 
 export const timerCurrent = async ( options?: Parameters<typeof apiFetch>[1]): Promise<CurrentTimerResponseDto> => {
@@ -882,7 +882,7 @@ export const timerCurrent = async ( options?: Parameters<typeof apiFetch>[1]): P
 
 export const getTimerCurrentQueryKey = () => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/timer`
+    `/api/backend/timer`
     ] as const;
     }
 
@@ -957,7 +957,7 @@ export const getTimerStartUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/timer/start`
+  return `/api/backend/timer/start`
 }
 
 export const timerStart = async (startTimerDto: StartTimerDto, options?: Parameters<typeof apiFetch>[1]): Promise<TimerResponseDto> => {
@@ -1039,7 +1039,7 @@ export const getTimerStopUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/timer/stop`
+  return `/api/backend/timer/stop`
 }
 
 export const timerStop = async ( options?: Parameters<typeof apiFetch>[1]): Promise<ImmersionSessionResponseDto> => {
@@ -1114,7 +1114,7 @@ export const getDashboardStatisticsUrl = (params: DashboardStatisticsParams,) =>
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/dashboard/statistics?${stringifiedParams}` : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/dashboard/statistics`
+  return stringifiedParams.length > 0 ? `/api/backend/dashboard/statistics?${stringifiedParams}` : `/api/backend/dashboard/statistics`
 }
 
 export const dashboardStatistics = async (params: DashboardStatisticsParams, options?: Parameters<typeof apiFetch>[1]): Promise<DashboardStatisticsResponseDto> => {
@@ -1134,7 +1134,7 @@ export const dashboardStatistics = async (params: DashboardStatisticsParams, opt
 
 export const getDashboardStatisticsQueryKey = (params?: DashboardStatisticsParams,) => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/dashboard/statistics`, ...(params ? [params] : [])
+    `/api/backend/dashboard/statistics`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -1209,7 +1209,7 @@ export const getUserPreferencesUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/user/preferences`
+  return `/api/backend/user/preferences`
 }
 
 export const userPreferences = async ( options?: Parameters<typeof apiFetch>[1]): Promise<UserPreferencesResponseDto> => {
@@ -1229,7 +1229,7 @@ export const userPreferences = async ( options?: Parameters<typeof apiFetch>[1])
 
 export const getUserPreferencesQueryKey = () => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/user/preferences`
+    `/api/backend/user/preferences`
     ] as const;
     }
 
@@ -1304,7 +1304,7 @@ export const getMetricsUrl = () => {
 
 
 
-  return `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/metrics`
+  return `/api/backend/metrics`
 }
 
 export const metrics = async ( options?: Parameters<typeof apiFetch>[1]): Promise<string> => {
@@ -1324,7 +1324,7 @@ export const metrics = async ( options?: Parameters<typeof apiFetch>[1]): Promis
 
 export const getMetricsQueryKey = () => {
     return [
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/metrics`
+    `/api/backend/metrics`
     ] as const;
     }
 
