@@ -70,7 +70,23 @@ Playwright runs Chromium tests under `e2e/`. Install the browser before running:
 
 ```sh
 bunx playwright install chromium
-bun run test:e2e
 ```
 
 Playwright starts the development server locally and builds/starts the production app when `CI` is set. Locally it can reuse a running server. Failures retain traces and screenshots under ignored test artifacts. Add journey tests when requested or agreed for a feature.
+
+End-to-end tests require a running backend with test data and an authenticated dedicated test account. With the frontend and backend running, record the account's browser session:
+
+```sh
+mkdir -p playwright/.auth
+bunx playwright codegen --save-storage=playwright/.auth/user.json http://localhost:3000
+```
+
+Sign in, wait for the dashboard to load, then close the browser to save the session. The auth directory is gitignored. Repeat this when the session expires.
+
+Run the tests with the saved session:
+
+```sh
+E2E_AUTH_STATE=playwright/.auth/user.json bun run test:e2e
+```
+
+Tests are skipped when authentication state is missing. Tests may create content and sessions, so use a dedicated test account.

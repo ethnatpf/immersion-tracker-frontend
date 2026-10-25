@@ -15,6 +15,16 @@ function renderShell() {
 }
 
 describe("workspace navigation", () => {
+  it("links session actions to the form and closes mobile navigation", async () => {
+    const user = userEvent.setup(); renderShell();
+    expect(screen.getByRole("link", { name: "Log new session" })).toHaveAttribute("href", "/log-session");
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    const dialog = await screen.findByRole("dialog", { name: "Navigation" });
+    const link = within(dialog).getByRole("link", { name: "Log new session" });
+    expect(link).toHaveAttribute("href", "/log-session");
+    await user.click(link);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
   it("links to the workspace pages", () => {
     renderShell();
     const workspace = screen.getByRole("navigation", { name: "Workspace" });

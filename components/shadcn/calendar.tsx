@@ -219,7 +219,7 @@ function CalendarDayButton({
         ...props.style,
         borderColor: modifiers.focused
           ? modifiers.selected && !modifiers.range_middle
-            ? "var(--primary-foreground)"
+            ? "color-mix(in srgb, var(--primary) 70%, black)"
             : "var(--primary)"
           : props.style?.borderColor,
       }}
