@@ -4,6 +4,7 @@ Frontend for tracking immersion sessions while learning a language. Uses Next.js
 
 - Designs: Penpot file **Immersion tracker**, accessed through the Penpot MCP server. Consult relevant designs for UI work.
 - Prefer shadcn components; build custom components only when shadcn does not support the required behavior.
+- Always use a shadcn date picker (Calendar with Popover) for date selection. Never use the Input component or a native `input type="date"` as a date picker.
 - Backend: separate repository. OpenAPI is served at `<backend-url>:4000/api-json`, locally `http://localhost:4000/api-json`.
 - Generate TanStack React Query hooks, models, and MSW mocks with `bun run api:generate`. Configure `OPENAPI_URL` and server-only `API_URL` in `.env.local`; see `.env.example`. The SDK uses the relative `/api/backend` proxy path. Never hand-edit `lib/api/generated`.
 - Use Zod for form validation.
