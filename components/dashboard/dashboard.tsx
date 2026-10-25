@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   BookOpen,
   Clock,
@@ -22,14 +23,14 @@ import type {
 } from "@/lib/api/generated/models";
 import { formatDuration, formatHours } from "@/lib/duration";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button, buttonVariants } from "@/components/shadcn/button";
+import { Card } from "@/components/shadcn/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/shadcn/tabs";
+import { Skeleton } from "@/components/shadcn/skeleton";
 import { MediaBreakdown } from "./media-breakdown";
 import { QueryError } from "@/components/error/query-error";
 import { RecentSessions } from "./recent-sessions";
-import { LanguageDropdown } from "./language-dropdown";
+import { LanguageDropdown } from "@/components/language-dropdown";
 
 const periods = [
   { value: "week", label: "Weekly" },
@@ -223,6 +224,7 @@ export function Dashboard() {
           </TabsList>
         </Tabs>
         <LanguageDropdown
+          ariaLabel="Dashboard language"
           languages={languageList}
           value={activeLanguage}
           onChange={setSelectedLanguage}
@@ -236,16 +238,16 @@ export function Dashboard() {
             <Timer aria-hidden="true" className="size-[18px]" />
             Start timer
           </Button>
-          <Button
-            onClick={unavailable}
-            className="h-12 gap-2 border-border bg-white px-2 text-[13px] font-semibold text-foreground hover:bg-accent sm:px-4 sm:text-sm md:h-10 md:w-[164px] md:border-primary md:bg-primary md:text-white md:hover:bg-primary/90"
+          <Link
+            href="/log-session"
+            className={cn(buttonVariants(), "h-12 gap-2 border-border bg-white px-2 text-[13px] font-semibold text-foreground hover:bg-accent sm:px-4 sm:text-sm md:h-10 md:w-[164px] md:border-primary md:bg-primary md:text-white md:hover:bg-primary/90")}
           >
             <Plus
               aria-hidden="true"
               className="size-[18px] text-primary md:text-white"
             />
-            Log immersion
-          </Button>
+            Log new session
+          </Link>
         </div>
       </div>
       {configError ? (

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import type { LanguageResponseDto } from "@/lib/api/generated/models";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/shadcn/button";
 import {
   Combobox,
   ComboboxContent,
@@ -12,8 +12,8 @@ import {
   ComboboxItem,
   ComboboxList,
   ComboboxTrigger,
-} from "@/components/ui/combobox";
-import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
+} from "@/components/shadcn/combobox";
+import { InputGroupAddon, InputGroupButton } from "@/components/shadcn/input-group";
 import { cn } from "@/lib/utils";
 
 export function LanguageDropdown({

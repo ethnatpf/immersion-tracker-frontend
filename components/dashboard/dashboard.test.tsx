@@ -38,6 +38,11 @@ beforeEach(() => {
 });
 
 describe("dashboard", () => {
+  it("links the session action to the logging page", async () => {
+    renderWithQuery(<Dashboard />);
+    expect(screen.getByRole("link", { name: "Log new session" })).toHaveAttribute("href", "/log-session");
+    await screen.findByRole("region", { name: "Total immersion" });
+  });
   it("loads the preferred language and binds metrics, charts, and recent sessions to the SDK responses", async () => {
     renderWithQuery(<Dashboard />);
     const total = await screen.findByRole("region", { name: "Total immersion" });

@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { CalendarIcon } from "lucide-react";
 import { TZDate } from "react-day-picker";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/shadcn/button";
+import { Calendar } from "@/components/shadcn/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/shadcn/popover";
 
 // Date-only values use UTC throughout so choosing a day never shifts it in another time zone.
 export function DatePicker({

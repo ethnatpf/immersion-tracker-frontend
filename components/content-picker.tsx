@@ -11,16 +11,16 @@ import {
   ComboboxItem,
   ComboboxList,
   useComboboxAnchor,
-} from "@/components/ui/combobox";
-import { InputGroupAddon } from "@/components/ui/input-group";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@/components/shadcn/combobox";
+import { InputGroupAddon } from "@/components/shadcn/input-group";
+import { Button } from "@/components/shadcn/button";
+import { Skeleton } from "@/components/shadcn/skeleton";
 import { QueryError } from "@/components/error/query-error";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/shadcn/tooltip";
 
 export type ContentChoice = { id?: string; title: string };
 

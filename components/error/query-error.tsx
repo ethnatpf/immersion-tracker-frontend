@@ -1,7 +1,7 @@
 "use client";
 
 import { ApiError } from "@/lib/api/fetch";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/shadcn/button";
 import { RequestId } from "@/components/error/request-id";
 
 // Shows a section's error inline while the rest of the page stays usable.

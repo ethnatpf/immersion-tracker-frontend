@@ -8,11 +8,11 @@ import { toast } from "sonner";
 import { useImmersionSessionHistory } from "@/lib/api/generated/immersion";
 import type { SessionHistoryItemResponseDto, SessionHistoryItemResponseDtoType } from "@/lib/api/generated/models";
 import { formatDuration } from "@/lib/duration";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/shadcn/button";
+import { Card } from "@/components/shadcn/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shadcn/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/shadcn/table";
+import { Skeleton } from "@/components/shadcn/skeleton";
 import { QueryError } from "@/components/error/query-error";
 
 const mediaStyles = {

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Clock, Layers, LayoutGrid, LogOut, Menu, Plus, Timer, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button, buttonVariants } from "@/components/shadcn/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shadcn/dropdown-menu";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/shadcn/sheet";
 import { cn } from "@/lib/utils";
 import { ApiErrorBoundary } from "@/components/error/api-error-boundary";
 
@@ -84,7 +84,7 @@ function Navigation({ mobile = false, onSelect }: { mobile?: boolean; onSelect?:
       </nav>
       <div className={cn("mx-5 mt-10 flex flex-col gap-3", mobile && "mt-7 border-t border-border pt-[27px]")}>
         <Button onClick={unavailable} className={cn("h-11 justify-start gap-3 rounded-[9px] px-[18px] font-semibold", mobile && "h-12")}><Timer aria-hidden="true" className="size-[18px]" />Start timer</Button>
-        <Button variant="outline" onClick={unavailable} className={cn("h-11 justify-start gap-3 rounded-[9px] bg-white px-[18px] text-[13px] font-semibold", mobile && "h-12 text-sm")}><Plus aria-hidden="true" className="size-5 text-primary" />Log new session</Button>
+        <Link href="/log-session" onClick={onSelect} className={cn(buttonVariants({ variant: "outline" }), "h-11 justify-start gap-3 rounded-[9px] bg-white px-[18px] text-[13px] font-semibold", mobile && "h-12 text-sm")}><Plus aria-hidden="true" className="size-5 text-primary" />Log new session</Link>
       </div>
       <div className={cn("mx-6 mt-auto border-t border-border pb-6 pt-3", mobile && "mx-5 pb-[max(48px,env(safe-area-inset-bottom))] pt-7")}>
         <a href="/auth/logout" className="flex min-h-11 items-center gap-[14px] rounded-lg px-2 text-sm text-muted-foreground outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"><LogOut aria-hidden="true" className="size-[19px]" />Log out</a>

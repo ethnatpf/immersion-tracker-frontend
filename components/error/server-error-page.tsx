@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { CircleAlert } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/shadcn/button";
+import { Card } from "@/components/shadcn/card";
 import { RequestId } from "@/components/error/request-id";
 import { cn } from "@/lib/utils";
 
