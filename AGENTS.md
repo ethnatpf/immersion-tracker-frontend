@@ -13,6 +13,12 @@ Frontend for tracking immersion sessions while learning a language. Uses Next.js
 - For test selection, implementation, and review, use the local [testing skill](.agents/skills/testing/SKILL.md).
 - For binding UI to backend data, use the local [backend integration skill](.agents/skills/backend-integration/SKILL.md).
 
+## Post-implementation review
+
+- After completing an implementation and its relevant checks, invoke the `implementation_reviewer` agent defined in [.codex/agents/implementation_reviewer.toml](.codex/agents/implementation_reviewer.toml) before the final handoff. Give it the user requirements, changed-file scope or diff baseline, and verification results.
+- The reviewer checks correctness, reusable design and shared-code placement, accidental duplication, and whether tests protect lasting behavior users care about. It reports findings without editing the implementation.
+- Address actionable findings, run the checks relevant to the fixes, and request a focused follow-up review for those findings. Resolve review findings before handoff or explicitly report any unresolved findings and verification limits. If custom agents are unavailable, perform the review using the same agent instructions and disclose that limitation.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

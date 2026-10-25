@@ -16,6 +16,8 @@ The frontend runs at http://localhost:3000. Set `API_URL` to the backend origin 
 
 Use shadcn components where supported and Zod for form validation.
 
+For complete feature implementation, invoke `$implement-feature` using the local [implement-feature skill](.agents/skills/implement-feature/SKILL.md). It covers requirements, planning, tests-first development, implementation review, and final checks.
+
 ## Authentication
 
 Use an Auth0 **Regular Web Application** with **New Universal Login**. Configure these local URLs:
