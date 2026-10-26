@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
-const authState = process.env.E2E_AUTH_STATE;
+const hasCredentials = existsSync("playwright/credentials.local.json");
+const authState =
+  process.env.E2E_AUTH_STATE ??
+  (hasCredentials ? "playwright/.auth/user.json" : undefined);
 
 for (const viewport of [
   { name: "desktop", width: 1440, height: 1000 },

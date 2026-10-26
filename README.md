@@ -74,19 +74,18 @@ bunx playwright install chromium
 
 Playwright starts the development server locally and builds/starts the production app when `CI` is set. Locally it can reuse a running server. Failures retain traces and screenshots under ignored test artifacts. Add journey tests when requested or agreed for a feature.
 
-End-to-end tests require a running backend with test data and an authenticated dedicated test account. With the frontend and backend running, record the account's browser session:
+End-to-end tests require a running backend with test data and a dedicated Auth0 test account. To let Playwright sign in automatically, copy the example and fill in the test account credentials:
 
 ```sh
-mkdir -p playwright/.auth
-bunx playwright codegen --save-storage=playwright/.auth/user.json http://localhost:3000
+cp playwright/credentials.example.json playwright/credentials.local.json
 ```
 
-Sign in, wait for the dashboard to load, then close the browser to save the session. The auth directory is gitignored. Repeat this when the session expires.
+`playwright/credentials.local.json` is gitignored. Keep this account dedicated to testing because browser journeys may create content and sessions. For Playwright Test, the credentials file triggers Auth0 sign-in and saves the browser session under the ignored `playwright/.auth/` directory. For visual checks with the Playwright MCP server, navigate to the local app and complete Auth0 sign-in in the MCP browser.
 
 Run the tests with the saved session:
 
 ```sh
-E2E_AUTH_STATE=playwright/.auth/user.json bun run test:e2e
+bun run test:e2e
 ```
 
-Tests are skipped when authentication state is missing. Tests may create content and sessions, so use a dedicated test account.
+Without either the credentials file or an `E2E_AUTH_STATE` file, authenticated journeys are skipped.

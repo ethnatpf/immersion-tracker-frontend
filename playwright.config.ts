@@ -1,4 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { existsSync } from "node:fs";
+
+const credentialsFile = "playwright/credentials.local.json";
+const hasCredentials = existsSync(credentialsFile);
+const authState =
+  process.env.E2E_AUTH_STATE ??
+  (hasCredentials ? "playwright/.auth/user.json" : undefined);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -12,7 +19,24 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: hasCredentials
+    ? [
+        { name: "setup", testMatch: /auth\.setup\.ts/ },
+        {
+          name: "chromium",
+          use: {
+            ...devices["Desktop Chrome"],
+            storageState: authState,
+          },
+          dependencies: ["setup"],
+        },
+      ]
+    : [
+        {
+          name: "chromium",
+          use: { ...devices["Desktop Chrome"], storageState: authState },
+        },
+      ],
   webServer: {
     command: process.env.CI ? "bun run build && bun run start" : "bun run dev",
     url: "http://localhost:3000",
