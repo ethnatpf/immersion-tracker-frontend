@@ -5,11 +5,14 @@
  * API for the immersion tracker website
  * OpenAPI spec version: 1.0
  */
-import type { ImmersionSessionHistoryType } from './immersionSessionHistoryType';
+import type { ImmersionSessionHistoryTypeItem } from './immersionSessionHistoryTypeItem';
 
 export type ImmersionSessionHistoryParams = {
+/**
+ * Filter by one or more content types
+ */
+type?: ImmersionSessionHistoryTypeItem[];
 content?: string;
-type?: ImmersionSessionHistoryType;
 /**
  * @pattern ^\d{4}-\d{2}-\d{2}$
  */

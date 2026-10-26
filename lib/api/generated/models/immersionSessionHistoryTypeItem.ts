@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-export type ImmersionSessionHistoryType = typeof ImmersionSessionHistoryType[keyof typeof ImmersionSessionHistoryType];
+export type ImmersionSessionHistoryTypeItem = typeof ImmersionSessionHistoryTypeItem[keyof typeof ImmersionSessionHistoryTypeItem];
 
 
-export const ImmersionSessionHistoryType = {
+export const ImmersionSessionHistoryTypeItem = {
   anime: 'anime',
   book: 'book',
   manga: 'manga',

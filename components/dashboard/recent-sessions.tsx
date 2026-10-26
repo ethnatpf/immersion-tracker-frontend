@@ -1,34 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getDashboardStatisticsQueryKey,
-  getImmersionSessionHistoryQueryKey,
-  getContentDetailsQueryKey,
-  useImmersionSessionDelete,
-  useImmersionSessionHistory,
-  useImmersionSessionUpdate,
-} from "@/lib/api/generated/immersion";
+import { useImmersionSessionHistory } from "@/lib/api/generated/immersion";
 import type {
-  SessionHistoryItemResponseDto,
   SessionHistoryItemResponseDtoType,
 } from "@/lib/api/generated/models";
 import { formatDuration } from "@/lib/duration";
 import { formatUtcDate } from "@/lib/date";
-import { Button } from "@/components/shadcn/button";
 import { Card } from "@/components/shadcn/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/shadcn/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -39,7 +20,7 @@ import {
 } from "@/components/shadcn/table";
 import { Skeleton } from "@/components/shadcn/skeleton";
 import { QueryError } from "@/components/error/query-error";
-import { SessionDialog } from "@/components/session-dialog";
+import { SessionActions } from "@/components/session-actions";
 import { sessionMediaStyles } from "@/components/session-media";
 
 function MediaBadge({ type }: { type: SessionHistoryItemResponseDtoType }) {
@@ -52,152 +33,6 @@ function MediaBadge({ type }: { type: SessionHistoryItemResponseDtoType }) {
       <Icon aria-hidden="true" className="size-[14px]" />
       {label}
     </span>
-  );
-}
-
-function SessionActions({
-  session,
-}: {
-  session: SessionHistoryItemResponseDto;
-}) {
-  const client = useQueryClient();
-  const remove = useImmersionSessionDelete();
-  const update = useImmersionSessionUpdate();
-  const [editing, setEditing] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  async function saveSession(data: Parameters<typeof update.mutateAsync>[0]["data"]) {
-    await update.mutateAsync({ id: session.id, data });
-    await Promise.all([
-      client.invalidateQueries({
-        queryKey: getImmersionSessionHistoryQueryKey(),
-      }),
-      client.invalidateQueries({
-        queryKey: getDashboardStatisticsQueryKey(),
-      }),
-      client.invalidateQueries({
-        queryKey: getContentDetailsQueryKey(session.content_id),
-      }),
-    ]);
-    toast.success("Session updated");
-  }
-
-  async function deleteSession() {
-    if (deleting) return;
-    setDeleting(true);
-    try {
-      await remove.mutateAsync({ id: session.id });
-      await Promise.all([
-        client.invalidateQueries({
-          queryKey: getImmersionSessionHistoryQueryKey(),
-        }),
-        client.invalidateQueries({
-          queryKey: getDashboardStatisticsQueryKey(),
-        }),
-        client.invalidateQueries({
-          queryKey: getContentDetailsQueryKey(session.content_id),
-        }),
-      ]);
-      toast.success("Session deleted");
-      setConfirmingDelete(false);
-    } catch {
-      // Mutation defaults show recoverable failures and route server errors to the boundary.
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          aria-label={`Actions for ${session.title}`}
-          onClick={(event) => event.stopPropagation()}
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground"
-            />
-          }
-        >
-          <MoreVertical aria-hidden="true" className="size-[18px]" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-48 whitespace-nowrap">
-          <DropdownMenuItem
-            onClick={(event) => {
-              event.stopPropagation();
-              setEditing(true);
-            }}
-          >
-            <Pencil aria-hidden="true" />
-            Edit session
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            disabled={remove.isPending}
-            onClick={(event) => {
-              event.stopPropagation();
-              setConfirmingDelete(true);
-            }}
-          >
-            <Trash2 aria-hidden="true" />
-            Delete session
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <SessionDialog
-        key={`${session.id}-${session.created_at}-${session.duration}-${editing}`}
-        session={session}
-        open={editing}
-        onOpenChange={setEditing}
-        title="Edit session"
-        saveLabel="Save changes"
-        onSave={saveSession}
-      />
-      <DialogPrimitive.Root
-        open={confirmingDelete}
-        onOpenChange={(open) => {
-          if (!remove.isPending && !deleting) setConfirmingDelete(open);
-        }}
-      >
-        <DialogPrimitive.Portal>
-          <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-[#182d2a]/35 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0" />
-          <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 text-foreground shadow-xl outline-none">
-            <div className="mb-5 flex items-center gap-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fbeceb] text-[#b94039]">
-                <Trash2 aria-hidden="true" className="size-5" />
-              </span>
-              <DialogPrimitive.Title className="text-lg font-semibold">
-                Delete this session?
-              </DialogPrimitive.Title>
-            </div>
-            <DialogPrimitive.Description className="text-sm leading-5 text-muted-foreground">
-              This will permanently remove this session from your immersion
-              history. You can’t undo this action.
-            </DialogPrimitive.Description>
-            <div className="mt-5 flex justify-end gap-3 border-t border-border pt-4">
-              <Button
-                variant="outline"
-                disabled={remove.isPending || deleting}
-                onClick={() => setConfirmingDelete(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={remove.isPending || deleting}
-                onClick={() => void deleteSession()}
-              >
-                {remove.isPending || deleting ? "Deleting…" : "Delete session"}
-              </Button>
-            </div>
-          </DialogPrimitive.Popup>
-        </DialogPrimitive.Portal>
-      </DialogPrimitive.Root>
-    </>
   );
 }
 

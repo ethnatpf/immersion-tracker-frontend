@@ -26,7 +26,7 @@ export * from './dashboardStatisticsParams';
 export * from './dashboardStatisticsRange';
 export * from './dashboardStatisticsResponseDto';
 export * from './immersionSessionHistoryParams';
-export * from './immersionSessionHistoryType';
+export * from './immersionSessionHistoryTypeItem';
 export * from './immersionSessionResponseDto';
 export * from './immersionSessionResponseDtoContentType';
 export * from './languageResponseDto';

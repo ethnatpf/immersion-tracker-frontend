@@ -22,11 +22,11 @@ For complete feature implementation, invoke `$implement-feature` using the local
 
 Use an Auth0 **Regular Web Application** with **New Universal Login**. Configure these local URLs:
 
-| Auth0 application setting | Local value |
-| --- | --- |
-| Allowed Callback URLs | `http://localhost:3000/auth/callback` |
-| Allowed Logout URLs | `http://localhost:3000` |
-| Allowed Web Origins | `http://localhost:3000` |
+| Auth0 application setting | Local value                           |
+| ------------------------- | ------------------------------------- |
+| Allowed Callback URLs     | `http://localhost:3000/auth/callback` |
+| Allowed Logout URLs       | `http://localhost:3000`               |
+| Allowed Web Origins       | `http://localhost:3000`               |
 
 Fill in the Auth0 variables in `.env.local` using `.env.example` and your application's settings. Use the hostname only for `AUTH0_DOMAIN`. Set `AUTH0_AUDIENCE` to the Auth0 API Identifier matching the backend's `AUTH_AUDIENCE`. Generate `AUTH0_SECRET` with `openssl rand -hex 32`, then restart the dev server. Sign out and in again after changing the audience so the session has an API access token.
 
