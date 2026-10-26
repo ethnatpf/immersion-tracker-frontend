@@ -43,6 +43,8 @@ const categoryTypes: Record<
   reading: ["book", "manga"],
   watching: ["anime", "drama", "video"],
 };
+const categoryTabClassName =
+  "text-xs text-muted-foreground hover:text-muted-foreground data-active:bg-white data-active:text-primary data-active:hover:text-primary data-active:shadow-none";
 
 type Session = SessionHistoryItemResponseDto;
 
@@ -218,8 +220,8 @@ export function History() {
         </p>
       </header>
 
-      <Card className="mb-6 gap-4 rounded-2xl border border-border bg-white p-4 ring-0 md:flex-row md:items-center md:justify-between md:p-6">
-        <label className="relative block md:w-[38%]">
+      <Card className="mb-6 gap-4 rounded-2xl border border-border bg-white p-4 ring-0 md:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <label className="relative block lg:min-w-0 lg:w-[38%]">
           <span className="sr-only">Search titles</span>
           <Search
             aria-hidden="true"
@@ -233,24 +235,25 @@ export function History() {
             className="h-12 rounded-xl bg-[#f7f9f8] pl-11"
           />
         </label>
-        <div className="md:w-[38%]">
+        <div className="lg:min-w-0 lg:w-[31%]">
           <TabsList
             aria-label="Media category"
             activateOnFocus
-            className="w-full bg-[#edf2ef] p-1 group-data-horizontal/tabs:h-12"
+            className="w-full bg-[#eff3f0] p-1 group-data-horizontal/tabs:h-12"
           >
-            <TabsTrigger value="all" className="text-xs">
+            <TabsTrigger value="all" className={categoryTabClassName}>
               All
             </TabsTrigger>
-            <TabsTrigger value="reading" className="text-xs">
+            <TabsTrigger value="reading" className={categoryTabClassName}>
               Reading
             </TabsTrigger>
-            <TabsTrigger value="watching" className="text-xs">
+            <TabsTrigger value="watching" className={categoryTabClassName}>
               Watching
             </TabsTrigger>
           </TabsList>
         </div>
         <DateRangePicker
+          className="lg:w-[250px]"
           value={{ from: startDate, to: endDate }}
           onChange={({ from, to }) => {
             setStartDate(from ?? "");

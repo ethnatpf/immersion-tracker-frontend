@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { CalendarDays, ChevronDown } from "lucide-react";
 import { TZDate, type DateRange } from "react-day-picker";
-import { formatUtcDate } from "@/lib/date";
+import { formatCompactUtcDate } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/shadcn/button";
 import { Calendar } from "@/components/shadcn/calendar";
 import {
@@ -28,9 +29,11 @@ function toValue(range?: DateRange): DateRangeValue {
 export function DateRangePicker({
   value,
   onChange,
+  className,
 }: {
   value: DateRangeValue;
   onChange: (value: DateRangeValue) => void;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DateRangeValue>(value);
@@ -39,9 +42,9 @@ export function DateRangePicker({
     : undefined;
   const label =
     value.from && value.to
-      ? `${formatUtcDate(`${value.from}T00:00:00Z`)} – ${formatUtcDate(`${value.to}T00:00:00Z`)}`
+      ? `${formatCompactUtcDate(value.from)} – ${formatCompactUtcDate(value.to)}`
       : value.from
-        ? `From ${formatUtcDate(`${value.from}T00:00:00Z`)}`
+        ? `From ${formatCompactUtcDate(value.from)}`
         : "Date range";
 
   return (
@@ -56,7 +59,10 @@ export function DateRangePicker({
         render={
           <Button
             variant="outline"
-            className="h-12 w-full justify-between rounded-xl bg-white px-4 text-sm md:w-[185px]"
+            className={cn(
+              "h-12 w-full justify-between rounded-xl bg-white px-4 text-sm",
+              className,
+            )}
           />
         }
       >

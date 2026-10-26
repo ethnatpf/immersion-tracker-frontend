@@ -24,7 +24,7 @@ export function Pagination({
 
   return (
     <footer className="mt-8 rounded-2xl border border-border bg-white p-4 text-xs text-muted-foreground md:mt-0 md:flex md:items-center md:justify-between md:rounded-none md:border-0 md:border-t md:px-6 md:py-5">
-      <p>
+      <p className="text-center md:text-left">
         Showing {first}–{last} of {total} {itemLabel}
       </p>
       <div className="mt-3 flex items-center justify-between gap-6 md:mt-0">

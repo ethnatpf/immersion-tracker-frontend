@@ -280,6 +280,9 @@ describe("History", () => {
       );
       await user.click(screen.getByRole("button", { name: "Apply" }));
       expect(
+        screen.getByRole("button", { name: /10\/10\/26.*10\/12\/26/ }),
+      ).toBeVisible();
+      expect(
         await within(
           await screen.findByRole("table", { name: "Immersion history" }),
         ).findByText("An anime episode"),
