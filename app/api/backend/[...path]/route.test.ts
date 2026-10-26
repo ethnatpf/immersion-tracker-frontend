@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getAccessToken } = vi.hoisted(() => ({ getAccessToken: vi.fn() }));
 vi.mock("@/lib/auth0", () => ({ auth0: { getAccessToken } }));
-import { GET, POST } from "./route";
+import { DELETE, GET, PATCH, POST } from "./route";
 
 const upstream = vi.fn();
 const context = (path: string) => ({
@@ -59,6 +59,54 @@ describe("authenticated API proxy", () => {
       expect(response.headers.get("X-Request-ID")).toBe("write-id");
     },
   );
+
+  it("forwards authorized session updates and deletes by ID", async () => {
+    const sessionId = "session-123";
+    const patchRequest = new Request(
+      `http://frontend.test/api/backend/immersion-session/${sessionId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ created_at: "2026-10-20", duration: 3600 }),
+      },
+    );
+    const patchResponse = await PATCH(
+      patchRequest,
+      context(`immersion-session/${sessionId}`),
+    );
+    expect(patchResponse.status).toBe(200);
+    expect(upstream.mock.calls[0][0].toString()).toBe(
+      `http://backend.test:4000/immersion-session/${sessionId}`,
+    );
+    expect(upstream.mock.calls[0][1].method).toBe("PATCH");
+    expect(JSON.parse(upstream.mock.calls[0][1].body)).toEqual({
+      created_at: "2026-10-20",
+      duration: 3600,
+    });
+
+    upstream.mockResolvedValue(new Response(null, { status: 204 }));
+    const deleteResponse = await DELETE(
+      new Request(
+        `http://frontend.test/api/backend/immersion-session/${sessionId}`,
+        { method: "DELETE" },
+      ),
+      context(`immersion-session/${sessionId}`),
+    );
+    expect(deleteResponse.status).toBe(204);
+    expect(upstream.mock.calls[1][1].method).toBe("DELETE");
+  });
+
+  it("does not allow writes to session collection subpaths", async () => {
+    const response = await PATCH(
+      new Request(
+        "http://frontend.test/api/backend/immersion-session/extra/path",
+        { method: "PATCH" },
+      ),
+      context("immersion-session/extra/path"),
+    );
+    expect(response.status).toBe(404);
+    expect(upstream).not.toHaveBeenCalled();
+  });
 
   it.each([
     "language",

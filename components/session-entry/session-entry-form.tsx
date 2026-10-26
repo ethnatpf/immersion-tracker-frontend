@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Check, Film, Save, SquarePlay, Tv } from "lucide-react";
+import { Check, Save } from "lucide-react";
 import { toast } from "sonner";
 import { ContentPicker, type ContentChoice } from "@/components/content-picker";
 import { DatePicker } from "@/components/shadcn/date-picker";
@@ -36,14 +36,9 @@ import {
   type SessionEntry,
 } from "@/lib/session-entry";
 import { cn } from "@/lib/utils";
+import { sessionMediaStyles, SessionTypeIcon } from "@/components/session-media";
 
-const contentTypes = [
-  { value: "anime", label: "Anime", icon: Tv },
-  { value: "drama", label: "Drama", icon: Film },
-  { value: "video", label: "Video", icon: SquarePlay },
-  { value: "manga", label: "Manga", icon: BookOpen },
-  { value: "book", label: "Book", icon: BookOpen },
-] as const;
+const contentTypes = ["anime", "drama", "video", "manga", "book"] as const;
 
 function Section({
   number,
@@ -302,49 +297,56 @@ function SessionFormBody({
               aria-label="Content type"
               className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5 xl:gap-4"
             >
-              {contentTypes.map(({ value, label, icon: Icon }) => (
-                <label
-                  key={value}
-                  className={cn(
-                    "relative flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-border bg-[#f9fbfa] px-4 text-sm md:min-h-[70px]",
-                    entry.type === value &&
-                      "border-primary bg-accent font-semibold text-primary",
-                  )}
-                >
-                  <input
-                    className="peer sr-only"
-                    type="radio"
-                    name="content-type"
-                    value={value}
-                    checked={entry.type === value}
-                    onChange={() => {
-                      setSelected(null);
-                      setEntry({
-                        ...entry,
-                        type: value,
-                        title: "",
-                        url: "",
-                        episodeMinutes: value === "anime" ? "24" : "",
-                        episodes: "",
-                        pageStart: "",
-                        pageEnd: "",
-                      });
-                      setErrors({});
-                      createContent.reset();
-                      createSession.reset();
-                    }}
-                  />
-                  <span className="pointer-events-none absolute inset-0 rounded-xl peer-focus-visible:ring-2 peer-focus-visible:ring-ring" />
-                  <Icon aria-hidden="true" className="size-5 shrink-0" />
-                  <span>{label}</span>
-                  {entry.type === value && (
-                    <Check
-                      aria-hidden="true"
-                      className="ml-auto size-4 shrink-0"
+              {contentTypes.map((value) => {
+                const { label } = sessionMediaStyles[value];
+                return (
+                  <label
+                    key={value}
+                    className={cn(
+                      "relative flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-border bg-[#f9fbfa] px-4 text-sm md:min-h-[70px]",
+                      entry.type === value &&
+                        "border-primary bg-accent font-semibold text-primary",
+                    )}
+                  >
+                    <input
+                      className="peer sr-only"
+                      type="radio"
+                      name="content-type"
+                      value={value}
+                      checked={entry.type === value}
+                      onChange={() => {
+                        setSelected(null);
+                        setEntry({
+                          ...entry,
+                          type: value,
+                          title: "",
+                          url: "",
+                          episodeMinutes: value === "anime" ? "24" : "",
+                          episodes: "",
+                          pageStart: "",
+                          pageEnd: "",
+                        });
+                        setErrors({});
+                        createContent.reset();
+                        createSession.reset();
+                      }}
                     />
-                  )}
-                </label>
-              ))}
+                    <span className="pointer-events-none absolute inset-0 rounded-xl peer-focus-visible:ring-2 peer-focus-visible:ring-ring" />
+                    <SessionTypeIcon
+                      type={value}
+                      aria-hidden="true"
+                      className="size-5 shrink-0"
+                    />
+                    <span>{label}</span>
+                    {entry.type === value && (
+                      <Check
+                        aria-hidden="true"
+                        className="ml-auto size-4 shrink-0"
+                      />
+                    )}
+                  </label>
+                );
+              })}
             </div>
           </Section>
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)] lg:gap-6">

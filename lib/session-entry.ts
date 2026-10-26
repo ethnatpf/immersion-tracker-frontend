@@ -36,6 +36,20 @@ export function episodeRange(
   return { start, end };
 }
 
+export function episodeDurationSeconds(
+  range: { start: number; end: number },
+  episodeMinutes: number,
+): number | undefined {
+  const secondsPerEpisode = episodeMinutes * 60;
+  const totalSeconds = (range.end - range.start + 1) * secondsPerEpisode;
+  return Number.isSafeInteger(secondsPerEpisode) &&
+    secondsPerEpisode > 0 &&
+    Number.isSafeInteger(totalSeconds) &&
+    totalSeconds > 0
+    ? totalSeconds
+    : undefined;
+}
+
 export function isReading(type: CreateContentDtoType) {
   return type === "book" || type === "manga";
 }
@@ -149,10 +163,11 @@ export function sessionPayload(
     };
   }
   const range = episodeRange(data.episodes)!;
+  const duration = episodeDurationSeconds(range, Number(data.episodeMinutes))!;
   return {
     content,
     created_at: data.date,
-    duration: (range.end - range.start + 1) * Number(data.episodeMinutes) * 60,
+    duration,
     progress: { unit: "episode", ...range },
   };
 }

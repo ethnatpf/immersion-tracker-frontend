@@ -2,7 +2,7 @@
 
 Frontend for tracking immersion sessions while learning a language. Uses Next.js App Router, TypeScript, Tailwind CSS, shadcn (Base UI), and Bun.
 
-- Designs: Penpot file **Immersion tracker**, accessed through the Penpot MCP server. Consult relevant designs for UI work.
+- Designs: Penpot file **Immersion tracker**, accessed through the Penpot MCP server. Consult relevant designs for UI work and follow the wireframes. Do not invent a design when no wireframe exists unless the user explicitly asks you to; ask how to proceed when a design decision is required.
 - Prefer shadcn components; build custom components only when shadcn does not support the required behavior.
 - Always use a shadcn date picker (Calendar with Popover) for date selection. Never use the Input component or a native `input type="date"` as a date picker.
 - Backend: separate repository. OpenAPI is served at `<backend-url>:4000/api-json`, locally `http://localhost:4000/api-json`.

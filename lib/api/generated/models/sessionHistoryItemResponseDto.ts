@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { SessionHistoryItemResponseDtoType } from './sessionHistoryItemResponseDtoType';
+import type { SessionProgressResponseDto } from './sessionProgressResponseDto';
 
 export interface SessionHistoryItemResponseDto {
   /** Immersion session ID */
@@ -21,4 +22,5 @@ export interface SessionHistoryItemResponseDto {
      * @minimum 1
      */
   duration: number;
+  progress?: SessionProgressResponseDto;
 }

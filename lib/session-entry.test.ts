@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   episodeRange,
+  episodeDurationSeconds,
   sessionPayload,
   type SessionEntry,
 } from "./session-entry";
@@ -54,6 +55,8 @@ describe("session entry", () => {
       progress: { unit: "episode", start: 61, end: 64 },
     });
     expect(episodeRange(" 61 - 64 ")).toEqual({ start: 61, end: 64 });
+    expect(episodeDurationSeconds({ start: 2, end: 4 }, 25.5)).toBe(4590);
+    expect(episodeDurationSeconds({ start: 2, end: 4 }, 0)).toBeUndefined();
   });
   it.each(["0", "-1", "5-2", "1.5", "1-2-3", "", "9007199254740992"])(
     "rejects invalid episode input %s",

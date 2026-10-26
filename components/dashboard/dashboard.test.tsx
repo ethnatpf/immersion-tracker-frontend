@@ -4,6 +4,8 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
+import { Toaster } from "@/components/shadcn/sonner";
+import { SessionDialog } from "@/components/session-dialog";
 import { getDashboardStatisticsMockHandler, getImmersionSessionHistoryMockHandler, getLanguageListMockHandler, getUserPreferencesMockHandler } from "@/lib/api/generated/immersion.msw";
 import type { DashboardStatisticsResponseDto, LanguageResponseDto, SessionHistoryResponseDto } from "@/lib/api/generated/models";
 import { Dashboard } from "./dashboard";
@@ -38,6 +40,39 @@ beforeEach(() => {
 });
 
 describe("dashboard", () => {
+  it("allows an anime session draft with no initial duration when creating a session", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn(async () => {});
+    renderWithQuery(
+      <SessionDialog
+        session={{
+          type: "anime",
+          title: "New anime",
+          created_at: "2026-10-24",
+          duration: 0,
+        }}
+        open
+        onOpenChange={vi.fn()}
+        title="Log new session"
+        saveLabel="Save session"
+        requireEpisodeProgress
+        onSave={onSave}
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Episodes watched" }), "12");
+    await user.type(screen.getByRole("spinbutton", { name: "Episode duration" }), "24");
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith({
+        created_at: "2026-10-24",
+        duration: 1440,
+        progress: { unit: "episode", start: 12, end: 12 },
+      }),
+    );
+  });
+
   it("links the session action to the logging page", async () => {
     renderWithQuery(<Dashboard />);
     expect(screen.getByRole("link", { name: "Log new session" })).toHaveAttribute("href", "/log-session");
@@ -184,8 +219,7 @@ describe("dashboard", () => {
     expect(screen.getByText("No audiovisual immersion in this period.")).toBeVisible();
     expect(await screen.findByText("No immersion sessions yet. Your sessions will appear here.")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "Total immersion" })).getByText("00:00:00")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Previous sessions page" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Next sessions page" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /sessions page/ })).not.toBeInTheDocument();
   });
 
   it("recovers from a statistics failure while keeping the recent log available", async () => {
@@ -219,21 +253,240 @@ describe("dashboard", () => {
     expect(within(error).getByRole("button", { name: "Try again" })).toBeVisible();
   });
 
-  it("paginates the recent log using server totals", async () => {
-    const user = userEvent.setup();
+  it("shows only the latest five sessions without pagination", async () => {
+    const sessionItems = Array.from({ length: 5 }, (_, index) => ({
+      ...history.items[0],
+      id: `session-${index + 1}`,
+      title: `Recent novel ${index + 1}`,
+    }));
+    const historyRequests: URL[] = [];
     server.use(getImmersionSessionHistoryMockHandler(({ request }) => {
-      const page = Number(new URL(request.url).searchParams.get("page"));
-      return { items: [{ ...history.items[0], id: `session-${page}`, title: page === 1 ? "First page novel" : "Older novel" }], total: 6, page, limit: 5 };
+      historyRequests.push(new URL(request.url));
+      return { items: sessionItems, total: 8, page: 1, limit: 5 };
     }));
     renderWithQuery(<Dashboard />);
-    await screen.findByText("Page 1 / 2");
-    expect(screen.getByRole("button", { name: "Previous sessions page" })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Next sessions page" }));
-    await screen.findByText("Page 2 / 2");
-    expect(screen.getByRole("button", { name: "Next sessions page" })).toBeDisabled();
-    expect(within(screen.getByRole("table", { name: "Recent immersion sessions" })).getByText("Older novel")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Previous sessions page" }));
-    await screen.findByText("Page 1 / 2");
+    const recent = await screen.findByRole("table", { name: "Recent immersion sessions" });
+    for (const session of sessionItems) {
+      expect(within(recent).getByText(session.title)).toBeVisible();
+    }
+    expect(within(recent).getAllByRole("row")).toHaveLength(6);
+    expect(historyRequests).toHaveLength(1);
+    expect(historyRequests[0].searchParams.get("page")).toBe("1");
+    expect(historyRequests[0].searchParams.get("limit")).toBe("5");
+    expect(screen.queryByRole("button", { name: /sessions page/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Page \d+ \/ \d+/)).not.toBeInTheDocument();
+  });
+
+  it("edits a session date and duration from its actions menu", async () => {
+    const user = userEvent.setup();
+    let current: SessionHistoryResponseDto = {
+      ...history,
+      items: [{
+        ...history.items[0],
+        type: "anime" as const,
+        duration: 2880,
+        progress: { unit: "episode" as const, start: 2, end: 3 },
+      }],
+    };
+    let updateBody: unknown;
+    let historyRequests = 0;
+    let releaseRefresh!: () => void;
+    const refreshPending = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    server.use(
+      getImmersionSessionHistoryMockHandler(async () => {
+        historyRequests += 1;
+        if (historyRequests > 1) await refreshPending;
+        return current;
+      }),
+      http.patch("*/immersion-session/:id", async ({ request, params }) => {
+        expect(params.id).toBe("session-1");
+        updateBody = await request.json();
+        current = {
+          ...history,
+          items: [
+            {
+              ...history.items[0],
+              type: "anime",
+              created_at: "2026-10-23T00:00:00.000Z",
+              duration: 5400,
+              progress: { unit: "episode", start: 2, end: 4 },
+            },
+          ],
+        };
+        return HttpResponse.json({ _id: "session-1" });
+      }),
+    );
+    renderWithQuery(<Dashboard />);
+
+    const recent = await screen.findByRole("table", {
+      name: "Recent immersion sessions",
+    });
+    await user.click(within(recent).getByRole("button", { name: "Actions for A Japanese novel" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Edit session" }));
+    expect(await screen.findByRole("dialog", { name: "Edit session" })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Episodes watched" })).toHaveValue("2–3"),
+    );
+    await user.clear(screen.getByRole("textbox", { name: "Episodes watched" }));
+    await user.type(screen.getByRole("textbox", { name: "Episodes watched" }), "2–4");
+    await user.clear(screen.getByRole("spinbutton", { name: "Episode duration" }));
+    await user.type(screen.getByRole("spinbutton", { name: "Episode duration" }), "30");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(historyRequests).toBeGreaterThan(1));
+    expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
+    releaseRefresh();
+    await waitFor(() =>
+      expect(updateBody).toEqual({
+        created_at: "2026-10-24",
+        duration: 5400,
+        progress: { unit: "episode", start: 2, end: 4 },
+      }),
+    );
+    expect(await within(recent).findByText("01:30:00")).toBeVisible();
+    expect(screen.queryByRole("dialog", { name: "Edit session" })).not.toBeInTheDocument();
+  });
+
+  it("uses page-range fields for a reading session", async () => {
+    const user = userEvent.setup();
+    let updateBody: unknown;
+    server.use(getImmersionSessionHistoryMockHandler({
+      ...history,
+      items: [{
+        ...history.items[0],
+        progress: { unit: "page", start: 156, end: 188 },
+      }],
+    }), http.patch("*/immersion-session/:id", async ({ request }) => {
+      updateBody = await request.json();
+      return HttpResponse.json({ _id: "session-1" });
+    }));
+    renderWithQuery(<Dashboard />);
+
+    const recent = await screen.findByRole("table", {
+      name: "Recent immersion sessions",
+    });
+    await user.click(
+      within(recent).getByRole("button", {
+        name: "Actions for A Japanese novel",
+      }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Edit session" }));
+
+    expect(await screen.findByRole("spinbutton", { name: "Page from" })).toHaveValue(156);
+    expect(screen.getByRole("spinbutton", { name: "Page to" })).toHaveValue(188);
+    expect(screen.getByRole("spinbutton", { name: "Hours" })).toHaveValue(1);
+    expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(45);
+    expect(screen.queryByRole("textbox", { name: "Episodes watched" })).not.toBeInTheDocument();
+
+    await user.clear(screen.getByRole("spinbutton", { name: "Page from" }));
+    await user.type(screen.getByRole("spinbutton", { name: "Page from" }), "160");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() =>
+      expect(updateBody).toEqual({
+        created_at: "2026-10-24",
+        duration: 6300,
+        progress: { unit: "page", start: 160, end: 188 },
+      }),
+    );
+    expect(screen.queryByRole("dialog", { name: "Edit session" })).not.toBeInTheDocument();
+  });
+
+  it("keeps manual duration fields for video sessions", async () => {
+    const user = userEvent.setup();
+    server.use(
+      getImmersionSessionHistoryMockHandler({
+        ...history,
+        items: [{ ...history.items[0], type: "video" }],
+      }),
+    );
+    renderWithQuery(<Dashboard />);
+
+    const recent = await screen.findByRole("table", {
+      name: "Recent immersion sessions",
+    });
+    await user.click(
+      within(recent).getByRole("button", {
+        name: "Actions for A Japanese novel",
+      }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Edit session" }));
+
+    expect(await screen.findByRole("spinbutton", { name: "Hours" })).toHaveValue(1);
+    expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(45);
+    expect(screen.getByRole("spinbutton", { name: "Seconds" })).toHaveValue(0);
+    expect(screen.queryByRole("textbox", { name: "Episodes watched" })).not.toBeInTheDocument();
+  });
+
+  it("shows a not-implemented toast when a recent-session row is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(
+      <>
+        <Dashboard />
+        <Toaster />
+      </>,
+    );
+
+    const recent = await screen.findByRole("table", {
+      name: "Recent immersion sessions",
+    });
+    const row = within(recent).getByRole("row", { name: /A Japanese novel/ });
+    await user.click(
+      within(row).getByRole("button", { name: "Actions for A Japanese novel" }),
+    );
+    const menu = await screen.findByRole("menu");
+    expect(
+      within(menu).queryByRole("menuitem", { name: "View content" }),
+    ).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(within(row).getByText("01:45:00"));
+    expect(await screen.findByText("Not implemented yet")).toBeVisible();
+  });
+
+  it("deletes a session after confirmation from its actions menu", async () => {
+    const user = userEvent.setup();
+    let current = history;
+    let deletedPath = "";
+    let historyRequests = 0;
+    let releaseRefresh!: () => void;
+    const refreshPending = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    server.use(
+      getImmersionSessionHistoryMockHandler(async () => {
+        historyRequests += 1;
+        if (historyRequests > 1) await refreshPending;
+        return current;
+      }),
+      http.delete("*/immersion-session/:id", ({ params }) => {
+        deletedPath = String(params.id);
+        current = { ...history, items: [], total: 0 };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderWithQuery(<Dashboard />);
+
+    const recent = await screen.findByRole("table", {
+      name: "Recent immersion sessions",
+    });
+    await user.click(within(recent).getByRole("button", { name: "Actions for A Japanese novel" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Delete session" }));
+    expect(await screen.findByRole("dialog", { name: "Delete this session?" })).toBeVisible();
+    expect(deletedPath).toBe("");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog", { name: "Delete this session?" })).not.toBeInTheDocument();
+    expect(within(recent).getByText("A Japanese novel")).toBeVisible();
+    expect(deletedPath).toBe("");
+    await user.click(within(recent).getByRole("button", { name: "Actions for A Japanese novel" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Delete session" }));
+    await user.click(screen.getByRole("button", { name: "Delete session" }));
+
+    await waitFor(() => expect(historyRequests).toBeGreaterThan(1));
+    expect(screen.getByRole("button", { name: "Deleting…" })).toBeDisabled();
+    releaseRefresh();
+    expect(await screen.findByText("No immersion sessions yet. Your sessions will appear here.")).toBeVisible();
+    expect(deletedPath).toBe("session-1");
   });
 
   it("recovers from a recent-log failure without hiding the statistics", async () => {

@@ -5,6 +5,7 @@ import { CalendarIcon } from "lucide-react";
 import { TZDate } from "react-day-picker";
 import { Button } from "@/components/shadcn/button";
 import { Calendar } from "@/components/shadcn/calendar";
+import { formatUtcDate } from "@/lib/date";
 import {
   Popover,
   PopoverContent,
@@ -52,14 +53,7 @@ export function DatePicker({
           aria-hidden="true"
           className="size-[18px] shrink-0 text-muted-foreground"
         />
-        {selected
-          ? new Intl.DateTimeFormat("en", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              timeZone: "UTC",
-            }).format(selected)
-          : "Pick a date"}
+        {selected ? formatUtcDate(selected.toISOString()) : "Pick a date"}
       </PopoverTrigger>
       <PopoverContent
         align="start"

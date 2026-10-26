@@ -240,7 +240,10 @@ export function Dashboard() {
           </Button>
           <Link
             href="/log-session"
-            className={cn(buttonVariants(), "h-12 gap-2 border-border bg-white px-2 text-[13px] font-semibold text-foreground hover:bg-accent sm:px-4 sm:text-sm md:h-10 md:w-[164px] md:border-primary md:bg-primary md:text-white md:hover:bg-primary/90")}
+            className={cn(
+              buttonVariants(),
+              "h-12 gap-2 border-border bg-white px-2 text-[13px] font-semibold text-foreground hover:bg-accent sm:px-4 sm:text-sm md:h-10 md:w-[164px] md:border-primary md:bg-primary md:text-white md:hover:bg-primary/90",
+            )}
           >
             <Plus
               aria-hidden="true"

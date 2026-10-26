@@ -5,6 +5,7 @@ const authorizedPaths = new Map<string, readonly string[]>([
   ["user/preferences", ["GET"]],
   ["dashboard/statistics", ["GET"]],
   ["immersion-session", ["GET", "POST"]],
+  ["immersion-session/:id", ["PATCH", "DELETE"]],
   ["content/search", ["GET"]],
   ["content", ["POST"]],
 ]);
@@ -24,6 +25,20 @@ export async function POST(
   return forward(request, context, "POST");
 }
 
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ path: string[] }> },
+) {
+  return forward(request, context, "PATCH");
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ path: string[] }> },
+) {
+  return forward(request, context, "DELETE");
+}
+
 async function forward(
   request: Request,
   context: { params: Promise<{ path: string[] }> },
@@ -31,7 +46,11 @@ async function forward(
 ) {
   const { path } = await context.params;
   const endpoint = path.join("/");
-  if (!authorizedPaths.get(endpoint)?.includes(method)) {
+  const authorizedPath =
+    path.length === 2 && path[0] === "immersion-session"
+      ? "immersion-session/:id"
+      : endpoint;
+  if (!authorizedPaths.get(authorizedPath)?.includes(method)) {
     return Response.json(
       { message: "Not found" },
       { status: 404, headers: privateHeaders },
