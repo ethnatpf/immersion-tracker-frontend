@@ -1,7 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
 import { renderWithQuery } from "@/test/render";
+import { server } from "@/test/server";
 import { AppShell } from "./app-shell";
 
 const route = vi.hoisted(() => ({ pathname: "/" }));
@@ -30,6 +32,28 @@ describe("workspace navigation", () => {
     const workspace = screen.getByRole("navigation", { name: "Workspace" });
     expect(within(workspace).getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/");
     expect(within(workspace).getByRole("link", { name: "History" })).toHaveAttribute("href", "/history");
+  });
+
+  it("keeps the active timer reduced when the page changes", async () => {
+    server.use(http.get("*/timer", () => HttpResponse.json({
+      id: "timer-one",
+      content_id: "content-one",
+      title: "The Dispossessed",
+      type: "book",
+      started_at: new Date(Date.now() - 90_000).toISOString(),
+    })));
+    const user = userEvent.setup();
+    const { rerender } = renderShell();
+    const timer = await screen.findByRole("region", { name: "Active immersion timer" });
+    await user.click(within(timer).getByRole("button", { name: "Reduce active timer" }));
+    expect(within(timer).getByRole("button", { name: "Expand active timer" })).toBeVisible();
+
+    route.pathname = "/history";
+    rerender(<AppShell><h1>History</h1></AppShell>);
+
+    const timerAfterNavigation = await screen.findByRole("region", { name: "Active immersion timer" });
+    expect(within(timerAfterNavigation).getByRole("button", { name: "Expand active timer" })).toBeVisible();
+    expect(within(timerAfterNavigation).queryByRole("button", { name: "Reduce active timer" })).not.toBeInTheDocument();
   });
 
   it("opens mobile navigation, closes after selection, and supports dismissal", async () => {

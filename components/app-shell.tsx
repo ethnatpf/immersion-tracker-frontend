@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Clock, Layers, LayoutGrid, LogOut, Menu, Plus, Timer, UserRound, X } from "lucide-react";
-import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/shadcn/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shadcn/dropdown-menu";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/shadcn/sheet";
 import { cn } from "@/lib/utils";
 import { ApiErrorBoundary } from "@/components/error/api-error-boundary";
+import { TimerFeature, type TimerFeatureHandle } from "@/components/timer/timer-feature";
 
 function Brand({ mobile = false }: { mobile?: boolean }) {
   return (
@@ -55,12 +55,8 @@ const workspaceLinks = [
   { href: "/history", label: "History", icon: Clock },
 ];
 
-function Navigation({ mobile = false, onSelect }: { mobile?: boolean; onSelect?: () => void }) {
+function Navigation({ mobile = false, onSelect, onStartTimer }: { mobile?: boolean; onSelect?: () => void; onStartTimer: () => void }) {
   const pathname = usePathname();
-  function unavailable() {
-    onSelect?.();
-    toast("Not implemented yet", { id: "not-implemented" });
-  }
   return (
     <>
       <nav aria-label={mobile ? "Mobile workspace" : "Workspace"} className={cn("px-4", mobile && "px-4")}>
@@ -83,7 +79,7 @@ function Navigation({ mobile = false, onSelect }: { mobile?: boolean; onSelect?:
         </div>
       </nav>
       <div className={cn("mx-5 mt-10 flex flex-col gap-3", mobile && "mt-7 border-t border-border pt-[27px]")}>
-        <Button onClick={unavailable} className={cn("h-11 justify-start gap-3 rounded-[9px] px-[18px] font-semibold", mobile && "h-12")}><Timer aria-hidden="true" className="size-[18px]" />Start timer</Button>
+        <Button onClick={() => { onSelect?.(); onStartTimer(); }} className={cn("h-11 justify-start gap-3 rounded-[9px] px-[18px] font-semibold", mobile && "h-12")}><Timer aria-hidden="true" className="size-[18px]" />Start timer</Button>
         <Link href="/log-session" onClick={onSelect} className={cn(buttonVariants({ variant: "outline" }), "h-11 justify-start gap-3 rounded-[9px] bg-white px-[18px] text-[13px] font-semibold", mobile && "h-12 text-sm")}><Plus aria-hidden="true" className="size-5 text-primary" />Log new session</Link>
       </div>
       <div className={cn("mx-6 mt-auto border-t border-border pb-6 pt-3", mobile && "mx-5 pb-[max(48px,env(safe-area-inset-bottom))] pt-7")}>
@@ -95,13 +91,16 @@ function Navigation({ mobile = false, onSelect }: { mobile?: boolean; onSelect?:
 
 export function AppShell({ children, email }: { children: ReactNode; email?: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [timerReduced, setTimerReduced] = useState(false);
+  const timerRef = useRef<TimerFeatureHandle>(null);
   const pathname = usePathname();
+  const onStartTimer = () => timerRef.current?.start();
   return (
     <div className="min-h-dvh bg-background">
       <a href="#main-content" className="sr-only z-[60] rounded-lg bg-white p-3 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
       <aside className="fixed inset-y-0 left-0 hidden w-[220px] flex-col overflow-y-auto border-r border-border bg-white md:flex">
         <div className="pb-11 pl-6 pr-4 pt-8"><Brand /></div>
-        <Navigation />
+        <Navigation onStartTimer={onStartTimer} />
       </aside>
       <header className="sticky top-0 z-30 flex h-[88px] items-center gap-3 border-b border-border bg-white px-5 md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -113,7 +112,7 @@ export function AppShell({ children, email }: { children: ReactNode; email?: str
               <Brand />
               <SheetClose aria-label="Close navigation" render={<Button variant="ghost" className="size-11 rounded-xl bg-background" />}><X aria-hidden="true" className="size-5 text-muted-foreground" /></SheetClose>
             </div>
-            <Navigation mobile onSelect={() => setMobileOpen(false)} />
+            <Navigation mobile onSelect={() => setMobileOpen(false)} onStartTimer={onStartTimer} />
           </SheetContent>
         </Sheet>
         <Brand mobile />
@@ -121,7 +120,7 @@ export function AppShell({ children, email }: { children: ReactNode; email?: str
       </header>
       <div className="relative min-h-[calc(100dvh-88px)] bg-[#f6f8f7] md:ml-[220px] md:min-h-dvh">
         <div className="absolute right-10 top-[38px] hidden md:block"><ProfileMenu email={email} /></div>
-        <main id="main-content" tabIndex={-1} className="min-w-0 px-5 py-[22px] outline-none md:px-10 md:py-8"><ApiErrorBoundary key={pathname}>{children}</ApiErrorBoundary></main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 px-5 py-[22px] outline-none md:px-10 md:py-8"><ApiErrorBoundary key={pathname}><TimerFeature ref={timerRef} reduced={timerReduced} onReducedChange={setTimerReduced}>{children}</TimerFeature></ApiErrorBoundary></main>
       </div>
     </div>
   );

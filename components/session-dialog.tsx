@@ -1,11 +1,17 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { X } from "lucide-react";
 import { z } from "zod";
 import { DatePicker } from "@/components/shadcn/date-picker";
 import { Button } from "@/components/shadcn/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/shadcn/dialog";
 import { Input } from "@/components/shadcn/input";
 import type {
   SessionHistoryItemResponseDtoType,
@@ -304,15 +310,17 @@ export function SessionDialog({
   }
 
   return (
-    <DialogPrimitive.Root
+    <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
         if (!saving) onOpenChange(nextOpen);
       }}
     >
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-[#182d2a]/35 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white text-foreground shadow-xl outline-none">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName="bg-[#182d2a]/35 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0"
+        className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[600px] flex-col gap-0 overflow-hidden rounded-2xl bg-white p-0 text-foreground shadow-xl ring-0 sm:max-w-[600px]"
+      >
           <header className="flex items-center gap-4 border-b border-border px-6 py-5">
             <span
               className="flex size-10 shrink-0 items-center justify-center rounded-xl"
@@ -328,20 +336,20 @@ export function SessionDialog({
               />
             </span>
             <div className="min-w-0 flex-1">
-              <DialogPrimitive.Title className="text-lg font-semibold">
+              <DialogTitle className="text-lg font-semibold">
                 {title}
-              </DialogPrimitive.Title>
-              <DialogPrimitive.Description className="truncate text-sm text-muted-foreground">
+              </DialogTitle>
+              <DialogDescription className="truncate text-sm text-muted-foreground">
                 {session.title}
-              </DialogPrimitive.Description>
+              </DialogDescription>
             </div>
-            <DialogPrimitive.Close
+            <DialogClose
               aria-label="Close session dialog"
               disabled={saving}
               render={<Button variant="ghost" size="icon" className="shrink-0" />}
             >
               <X aria-hidden="true" className="size-4" />
-            </DialogPrimitive.Close>
+            </DialogClose>
           </header>
           <form
             onSubmit={(event) => void save(event)}
@@ -590,19 +598,18 @@ export function SessionDialog({
               )}
             </fieldset>
             <footer className="flex justify-end gap-3 border-t border-border px-6 py-4">
-              <DialogPrimitive.Close
+              <DialogClose
                 disabled={saving}
                 render={<Button type="button" variant="outline" />}
               >
                 Cancel
-              </DialogPrimitive.Close>
+              </DialogClose>
               <Button type="submit" disabled={saving}>
                 {saving ? "Saving…" : saveLabel}
               </Button>
             </footer>
           </form>
-        </DialogPrimitive.Popup>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

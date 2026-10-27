@@ -33,6 +33,7 @@ export function ContentPicker({
   onSelect,
   disabled,
   error,
+  newContentAction = "save the session",
 }: {
   language: string;
   type: CreateContentDtoType;
@@ -42,6 +43,7 @@ export function ContentPicker({
   onSelect: (choice: ContentChoice) => void;
   disabled?: boolean;
   error?: string;
+  newContentAction?: string;
 }) {
   const [debounced, setDebounced] = useState("");
   const [page, setPage] = useState(1);
@@ -189,7 +191,7 @@ export function ContentPicker({
                   <span className="mt-1 block text-xs text-muted-foreground">
                     {item.id
                       ? "Already in your content"
-                      : "New content · Created when you save the session"}
+                      : `New content · Created when you ${newContentAction}`}
                   </span>
                 </span>
               </ComboboxItem>
@@ -220,7 +222,7 @@ export function ContentPicker({
         {selected
           ? selected.id
             ? "Existing content selected."
-            : "Your new content will be created when you save."
+            : `Your new content will be created when you ${newContentAction}.`
           : "Search for an existing title, or choose a new one to create content."}
       </p>
       {error && (

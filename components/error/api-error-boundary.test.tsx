@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useQuery } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Providers } from "@/app/providers";
 import { apiFetch } from "@/lib/api/fetch";
 import { server } from "@/test/server";
@@ -11,6 +11,10 @@ import { QueryError } from "@/components/error/query-error";
 
 const route = vi.hoisted(() => ({ pathname: "/library" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
+
+beforeEach(() => {
+  server.use(http.get("*/timer", () => HttpResponse.json({ message: "No active timer" }, { status: 404 })));
+});
 
 afterEach(() => {
   route.pathname = "/library";
@@ -29,6 +33,12 @@ function workspace(children = <Library />) {
 }
 
 describe("shared API error handling", () => {
+  it("keeps navigation available when the timer lookup has a server error", async () => {
+    server.use(http.get("*/timer", () => HttpResponse.json({}, { status: 503 })));
+    render(workspace(<h1>Your library</h1>));
+    expect(await screen.findByRole("heading", { name: "Something went wrong" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Workspace" })).toBeVisible();
+  });
   it.each([500, 502, 503, 504, 599])("replaces stale page content on a background %i, keeps navigation, and handles another failed retry", async (status) => {
     const user = userEvent.setup();
     server.use(http.get("*/library", () => HttpResponse.json({ title: "Your library" })));

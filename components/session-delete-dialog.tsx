@@ -1,8 +1,15 @@
 "use client";
 
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/shadcn/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog";
 
 export function SessionDeleteDialog({
   open,
@@ -16,28 +23,30 @@ export function SessionDeleteDialog({
   onConfirm: () => void;
 }) {
   return (
-    <DialogPrimitive.Root
+    <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
         if (!busy) onOpenChange(nextOpen);
       }}
     >
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-[#182d2a]/35 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 text-foreground shadow-xl outline-none">
-          <div className="mb-5 flex items-center gap-4">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName="bg-[#182d2a]/35 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0"
+        className="flex w-[calc(100%-2rem)] max-w-[400px] flex-col gap-0 rounded-2xl bg-white p-6 text-foreground shadow-xl ring-0 sm:max-w-[400px]"
+      >
+          <DialogHeader className="mb-5 flex-row items-center gap-4">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fbeceb] text-[#b94039]">
               <Trash2 aria-hidden="true" className="size-5" />
             </span>
-            <DialogPrimitive.Title className="text-lg font-semibold">
+            <DialogTitle className="text-lg font-semibold">
               Delete this session?
-            </DialogPrimitive.Title>
-          </div>
-          <DialogPrimitive.Description className="text-sm leading-5 text-muted-foreground">
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="text-sm leading-5 text-muted-foreground">
             This will permanently remove this session from your immersion
             history. You can’t undo this action.
-          </DialogPrimitive.Description>
-          <div className="mt-5 flex justify-end gap-3 border-t border-border pt-4">
+          </DialogDescription>
+          <DialogFooter className="mx-0 mb-0 mt-5 flex-row justify-end gap-3 rounded-none border-border bg-white p-0 pt-4">
             <Button
               variant="outline"
               disabled={busy}
@@ -52,9 +61,8 @@ export function SessionDeleteDialog({
             >
               {busy ? "Deleting…" : "Delete session"}
             </Button>
-          </div>
-        </DialogPrimitive.Popup>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+          </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

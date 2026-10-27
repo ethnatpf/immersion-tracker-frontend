@@ -8,6 +8,9 @@ const authorizedPaths = new Map<string, readonly string[]>([
   ["immersion-session/:id", ["PATCH", "DELETE"]],
   ["content/search", ["GET"]],
   ["content", ["POST"]],
+  ["timer", ["GET"]],
+  ["timer/start", ["POST"]],
+  ["timer/stop", ["POST"]],
 ]);
 const privateHeaders = { "Cache-Control": "private, no-store" };
 

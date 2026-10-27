@@ -18,6 +18,20 @@ beforeEach(() => {
 });
 
 describe("authenticated API proxy", () => {
+  it("forwards the timer lookup and start/stop actions", async () => {
+    const lookup = await GET(new Request("http://frontend.test/api/backend/timer"), context("timer"));
+    expect(lookup.status).toBe(200);
+    expect(upstream.mock.calls[0][0].toString()).toBe("http://backend.test:4000/timer");
+    for (const path of ["timer/start", "timer/stop"]) {
+      const response = await POST(new Request(`http://frontend.test/api/backend/${path}`, {
+        method: "POST", body: JSON.stringify(path === "timer/start" ? { content: "content-one" } : {}),
+      }), context(path));
+      expect(response.status).toBe(200);
+    }
+    expect(upstream.mock.calls[1][0].toString()).toBe("http://backend.test:4000/timer/start");
+    expect(JSON.parse(upstream.mock.calls[1][1].body)).toEqual({ content: "content-one" });
+    expect(upstream.mock.calls[2][0].toString()).toBe("http://backend.test:4000/timer/stop");
+  });
   it("forwards content searches", async () => {
     const response = await GET(
       new Request(
