@@ -4,6 +4,7 @@ Frontend for tracking immersion sessions while learning a language. Uses Next.js
 
 - Designs: Penpot file **Immersion tracker**, accessed through the Penpot MCP server. Consult relevant designs for UI work and follow the wireframes. Do not invent a design when no wireframe exists unless the user explicitly asks you to; ask how to proceed when a design decision is required.
 - For UI implementation or change tasks, use the Playwright MCP server to verify the result visually in a running browser when the server is installed. When Auth0 blocks the MCP browser, sign in through the MCP browser using the ignored `playwright/credentials.local.json` file. If the server is unavailable, report that visual verification could not be performed.
+- Assume the development server is already running at `http://localhost:3000` unless the user specifies another address. Never start or stop the development server yourself; use the existing server for Playwright verification.
 - Prefer shadcn components; build custom components only when shadcn does not support the required behavior.
 - Always use a shadcn date picker (Calendar with Popover) for date selection. Never use the Input component or a native `input type="date"` as a date picker.
 - Backend: separate repository. OpenAPI is served at `<backend-url>:4000/api-json`, locally `http://localhost:4000/api-json`.
