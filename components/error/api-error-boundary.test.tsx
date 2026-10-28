@@ -32,17 +32,21 @@ function workspace(children = <Library />) {
   return <Providers><AppShell>{children}</AppShell></Providers>;
 }
 
+function renderForExpectedServerError(ui = workspace()) {
+  return render(ui, { onCaughtError: () => {} });
+}
+
 describe("shared API error handling", () => {
   it("keeps navigation available when the timer lookup has a server error", async () => {
     server.use(http.get("*/timer", () => HttpResponse.json({}, { status: 503 })));
-    render(workspace(<h1>Your library</h1>));
+    renderForExpectedServerError(workspace(<h1>Your library</h1>));
     expect(await screen.findByRole("heading", { name: "Something went wrong" })).toBeVisible();
     expect(screen.getByRole("navigation", { name: "Workspace" })).toBeVisible();
   });
   it.each([500, 502, 503, 504, 599])("replaces stale page content on a background %i, keeps navigation, and handles another failed retry", async (status) => {
     const user = userEvent.setup();
     server.use(http.get("*/library", () => HttpResponse.json({ title: "Your library" })));
-    const { rerender } = render(workspace());
+    const { rerender } = renderForExpectedServerError(workspace());
     await screen.findByRole("heading", { name: "Your library" });
 
     let attempt = 0;
@@ -79,7 +83,7 @@ describe("shared API error handling", () => {
 
   it("shows the server error page without inventing an ID when the header is missing", async () => {
     server.use(http.get("*/library", () => HttpResponse.json({}, { status: 500 })));
-    render(workspace());
+    renderForExpectedServerError(workspace());
     await screen.findByRole("heading", { name: "Something went wrong" });
     expect(screen.queryByText("Request ID")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Copy ID" })).not.toBeInTheDocument();

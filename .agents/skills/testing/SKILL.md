@@ -28,6 +28,7 @@ Choose unit and component integration tests autonomously based on the behavior c
 - Import generated MSW handler factories from `lib/api/generated/immersion.msw.ts`. Pass explicit, typed fixtures for assertions; do not rely on random generated response values. Override error responses with MSW handlers where the spec does not generate that status.
 - Never hand-edit generated hooks, models, or mocks. Regenerate them with `bun run api:generate` when the API contract changes.
 - Assert visible outcomes with accessible roles and labels; use user-event for interactions. Avoid snapshots as the primary assertion and avoid testing shadcn internals.
+- In React 19 tests that intentionally trigger an error boundary, pass React Testing Library's `onCaughtError` render option for that test to avoid React's default stderr logging. Keep assertions on the rendered fallback and recovery; avoid broad `console.error` mocks.
 - Keep backend-dependent browser journeys separate from MSW component tests. Agree on authentication and test data prerequisites for each journey; do not silently substitute mocks for a requested complete journey.
 
 ## Verification

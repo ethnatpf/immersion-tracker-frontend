@@ -546,6 +546,7 @@ describe("session entry form", () => {
           <SessionEntryForm />
           <Toaster />
         </>,
+        status === 503 ? { onCaughtError: () => {} } : undefined,
       );
       await user.click(screen.getByRole("radio", { name: "Book" }));
       await user.type(
@@ -687,6 +688,7 @@ describe("session entry form", () => {
         <SessionEntryForm />
         <Toaster />
       </>,
+      { onCaughtError: () => {} },
     );
     const user = await selectExisting();
     await user.click(screen.getByRole("button", { name: "Save session" }));

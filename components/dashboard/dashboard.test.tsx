@@ -12,7 +12,19 @@ import { Dashboard } from "./dashboard";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
-vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+vi.stubGlobal("ResizeObserver", class {
+  constructor(private readonly callback: ResizeObserverCallback) {}
+
+  observe() {
+    this.callback(
+      [{ contentRect: { width: 320, height: 200 } } as ResizeObserverEntry],
+      this as unknown as ResizeObserver,
+    );
+  }
+
+  unobserve() {}
+  disconnect() {}
+});
 
 const languages: LanguageResponseDto[] = [
   { id: "ja", code: "ja", name: "Japanese", nativeName: "日本語" },
@@ -508,7 +520,7 @@ describe("dashboard", () => {
   it.each(["language", "user/preferences", "dashboard/statistics", "immersion-session"])("replaces the page for a 500 from %s and recovers on retry", async (endpoint) => {
     const user = userEvent.setup();
     server.use(http.get(`*/${endpoint}`, () => HttpResponse.json({ message: "Internal details" }, { status: 500, headers: { "X-Request-ID": `failed-${endpoint}` } })));
-    renderWithQuery(<Dashboard />);
+    renderWithQuery(<Dashboard />, { onCaughtError: () => {} });
     expect(await screen.findByRole("heading", { name: "Something went wrong" })).toBeVisible();
     expect(screen.getByText("500 · SERVER ERROR")).toBeVisible();
     expect(screen.getByText(`failed-${endpoint}`)).toBeVisible();

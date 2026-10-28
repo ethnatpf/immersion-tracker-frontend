@@ -8,7 +8,12 @@ import { AppShell } from "./app-shell";
 
 const route = vi.hoisted(() => ({ pathname: "/" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
-beforeEach(() => { route.pathname = "/"; });
+beforeEach(() => {
+  route.pathname = "/";
+  server.use(http.get("*/timer", () =>
+    HttpResponse.json({ message: "No active timer" }, { status: 404 }),
+  ));
+});
 
 function renderShell() {
   return renderWithQuery(

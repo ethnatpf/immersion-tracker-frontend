@@ -546,7 +546,7 @@ describe("History", () => {
         ),
       ),
     );
-    renderWithQuery(<History />);
+    renderWithQuery(<History />, { onCaughtError: () => {} });
     expect(
       await screen.findByRole("heading", { name: "Something went wrong" }),
     ).toBeVisible();
