@@ -19,6 +19,7 @@ import type {
 } from "@/lib/api/generated/models";
 import { sessionMediaStyles, SessionTypeIcon } from "@/components/session-media";
 import { episodeDurationSeconds, episodeRange } from "@/lib/session-entry";
+import { DEFAULT_EPISODE_MINUTES } from "@/lib/constants";
 
 export type SessionDialogSubmission = {
   created_at: string;
@@ -102,7 +103,7 @@ const episodeSchema = z
     requireEpisodeProgress: z.boolean(),
   })
   .superRefine(({ episodes, episodeMinutes, requireEpisodeProgress }, context) => {
-    if (!episodes.trim() && !episodeMinutes.trim() && !requireEpisodeProgress) return;
+    if (!episodes.trim() && !requireEpisodeProgress) return;
     const range = episodeRange(episodes);
     if (!range) {
       context.addIssue({
@@ -189,7 +190,15 @@ export function SessionDialog({
 }) {
   const supportsEpisodes = session.type === "anime" || session.type === "drama";
   const supportsPages = session.type === "book" || session.type === "manga";
+  const defaultEpisodeMinutes =
+    session.type === "anime"
+      ? DEFAULT_EPISODE_MINUTES.anime
+      : session.type === "drama"
+        ? DEFAULT_EPISODE_MINUTES.drama
+        : undefined;
   const sessionProgress = session.progress;
+  const needsEpisodeProgress =
+    requireEpisodeProgress || sessionProgress?.unit === "episode";
   const id = useId().replaceAll(":", "");
   const [values, setValues] = useState(() => initialValues(session));
   const [saving, setSaving] = useState(false);
@@ -210,7 +219,9 @@ export function SessionDialog({
             (sessionProgress.end - sessionProgress.start + 1) /
             60,
         )
-      : "";
+      : defaultEpisodeMinutes === undefined
+        ? ""
+        : String(defaultEpisodeMinutes);
   const pageStartValue =
     sessionProgress?.unit === "page" ? String(sessionProgress.start) : "";
   const pageEndValue =
@@ -250,7 +261,7 @@ export function SessionDialog({
     const episodeResult = episodeSchema.safeParse({
       episodes,
       episodeMinutes,
-      requireEpisodeProgress,
+      requireEpisodeProgress: needsEpisodeProgress,
     });
     const pageResult = pageSchema.safeParse({ pageStart, pageEnd });
     if (!episodeResult.success || !pageResult.success) {
@@ -597,14 +608,24 @@ export function SessionDialog({
                 </div>
               )}
             </fieldset>
-            <footer className="flex justify-end gap-3 border-t border-border px-6 py-4">
+            <footer className="flex flex-col-reverse gap-3 border-t border-border px-6 py-4 sm:flex-row sm:justify-end">
               <DialogClose
                 disabled={saving}
-                render={<Button type="button" variant="outline" />}
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 w-full sm:w-[108px]"
+                  />
+                }
               >
                 Cancel
               </DialogClose>
-              <Button type="submit" disabled={saving}>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="h-11 w-full sm:w-[196px]"
+              >
                 {saving ? "Saving…" : saveLabel}
               </Button>
             </footer>

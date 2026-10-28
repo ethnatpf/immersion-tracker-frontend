@@ -26,6 +26,7 @@ import {
   useUserPreferences,
 } from "@/lib/api/generated/immersion";
 import { formatDuration } from "@/lib/duration";
+import { DEFAULT_EPISODE_MINUTES } from "@/lib/constants";
 import { isServerError } from "@/lib/query-options";
 import {
   episodeRange,
@@ -79,7 +80,7 @@ export function SessionEntryForm() {
     url: "",
     date: new Date().toISOString().slice(0, 10),
     episodes: "",
-    episodeMinutes: "24",
+    episodeMinutes: String(DEFAULT_EPISODE_MINUTES.anime),
     hours: "0",
     minutes: "0",
     pageStart: "",
@@ -321,7 +322,10 @@ function SessionFormBody({
                           type: value,
                           title: "",
                           url: "",
-                          episodeMinutes: value === "anime" ? "24" : "",
+                          episodeMinutes:
+                            value === "anime"
+                              ? String(DEFAULT_EPISODE_MINUTES.anime)
+                              : "",
                           episodes: "",
                           pageStart: "",
                           pageEnd: "",
@@ -543,7 +547,7 @@ function SessionFormBody({
                     })}
                     {entry.type === "anime" && (
                       <p className="mt-2 text-[11px] text-muted-foreground">
-                        Standard TV anime length: 24 min.
+                        Standard TV anime length: {DEFAULT_EPISODE_MINUTES.anime} min.
                       </p>
                     )}
                   </div>

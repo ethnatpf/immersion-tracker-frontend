@@ -13,6 +13,7 @@
     "test:unit": "vitest run --project unit --passWithNoTests",
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",
+    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

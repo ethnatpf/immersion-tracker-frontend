@@ -7,6 +7,7 @@ const authorizedPaths = new Map<string, readonly string[]>([
   ["immersion-session", ["GET", "POST"]],
   ["immersion-session/:id", ["PATCH", "DELETE"]],
   ["content/search", ["GET"]],
+  ["content/:id", ["GET", "PATCH"]],
   ["content", ["POST"]],
   ["timer", ["GET"]],
   ["timer/start", ["POST"]],
@@ -48,11 +49,14 @@ async function forward(
   method: string,
 ) {
   const { path } = await context.params;
+
   const endpoint = path.join("/");
   const authorizedPath =
     path.length === 2 && path[0] === "immersion-session"
       ? "immersion-session/:id"
-      : endpoint;
+      : path.length === 2 && path[0] === "content"
+        ? "content/:id"
+        : endpoint;
   if (!authorizedPaths.get(authorizedPath)?.includes(method)) {
     return Response.json(
       { message: "Not found" },

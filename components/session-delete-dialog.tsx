@@ -46,11 +46,12 @@ export function SessionDeleteDialog({
             This will permanently remove this session from your immersion
             history. You can’t undo this action.
           </DialogDescription>
-          <DialogFooter className="mx-0 mb-0 mt-5 flex-row justify-end gap-3 rounded-none border-border bg-white p-0 pt-4">
+          <DialogFooter className="mx-0 mb-0 mt-5 justify-end gap-3 rounded-none border-border bg-white p-0 pt-4">
             <Button
               variant="outline"
               disabled={busy}
               onClick={() => onOpenChange(false)}
+              className="h-11 w-full sm:w-[108px]"
             >
               Cancel
             </Button>
@@ -58,6 +59,7 @@ export function SessionDeleteDialog({
               variant="destructive"
               disabled={busy}
               onClick={onConfirm}
+              className="h-11 w-full sm:w-[196px]"
             >
               {busy ? "Deleting…" : "Delete session"}
             </Button>

@@ -10,6 +10,8 @@ import { getDashboardStatisticsMockHandler, getImmersionSessionHistoryMockHandle
 import type { DashboardStatisticsResponseDto, LanguageResponseDto, SessionHistoryResponseDto } from "@/lib/api/generated/models";
 import { Dashboard } from "./dashboard";
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
 
 const languages: LanguageResponseDto[] = [
@@ -27,6 +29,7 @@ const history: SessionHistoryResponseDto = {
 let statisticsRequests: URL[];
 
 beforeEach(() => {
+  router.push.mockClear();
   statisticsRequests = [];
   server.use(
     getLanguageListMockHandler(languages),
@@ -40,7 +43,7 @@ beforeEach(() => {
 });
 
 describe("dashboard", () => {
-  it("allows an anime session draft with no initial duration when creating a session", async () => {
+  it("uses the default episode duration for a new anime session", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn(async () => {});
     renderWithQuery(
@@ -61,7 +64,7 @@ describe("dashboard", () => {
     );
 
     await user.type(screen.getByRole("textbox", { name: "Episodes watched" }), "12");
-    await user.type(screen.getByRole("spinbutton", { name: "Episode duration" }), "24");
+    expect(screen.getByRole("spinbutton", { name: "Episode duration" })).toHaveValue(24);
     await user.click(screen.getByRole("button", { name: "Save session" }));
 
     await waitFor(() =>
@@ -419,7 +422,7 @@ describe("dashboard", () => {
     expect(screen.queryByRole("textbox", { name: "Episodes watched" })).not.toBeInTheDocument();
   });
 
-  it("shows a not-implemented toast when a recent-session row is clicked", async () => {
+  it("opens the content detail when a recent-session row is clicked", async () => {
     const user = userEvent.setup();
     renderWithQuery(
       <>
@@ -432,6 +435,7 @@ describe("dashboard", () => {
       name: "Recent immersion sessions",
     });
     const row = within(recent).getByRole("row", { name: /A Japanese novel/ });
+    expect(within(row).getByRole("link", { name: "A Japanese novel" })).toHaveAttribute("href", "/content/book-1");
     await user.click(
       within(row).getByRole("button", { name: "Actions for A Japanese novel" }),
     );
@@ -441,7 +445,7 @@ describe("dashboard", () => {
     ).not.toBeInTheDocument();
     await user.keyboard("{Escape}");
     await user.click(within(row).getByText("01:45:00"));
-    expect(await screen.findByText("Not implemented yet")).toBeVisible();
+    expect(router.push).toHaveBeenCalledWith("/content/book-1");
   });
 
   it("deletes a session after confirmation from its actions menu", async () => {

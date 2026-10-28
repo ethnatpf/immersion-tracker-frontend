@@ -45,6 +45,30 @@ describe("authenticated API proxy", () => {
     );
   });
 
+  it("forwards content detail reads and completion updates", async () => {
+    const contentId = "content-123";
+    const details = await GET(
+      new Request(`http://frontend.test/api/backend/content/${contentId}`),
+      context(`content/${contentId}`),
+    );
+    expect(details.status).toBe(200);
+    expect(upstream.mock.calls[0][0].toString()).toBe(
+      `http://backend.test:4000/content/${contentId}`,
+    );
+
+    const updated = await PATCH(
+      new Request(`http://frontend.test/api/backend/content/${contentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: true }),
+      }),
+      context(`content/${contentId}`),
+    );
+    expect(updated.status).toBe(200);
+    expect(upstream.mock.calls[1][1].method).toBe("PATCH");
+    expect(JSON.parse(upstream.mock.calls[1][1].body)).toEqual({ completed: true });
+  });
+
   it.each(["content", "immersion-session"])(
     "forwards authorized JSON writes to %s",
     async (path) => {

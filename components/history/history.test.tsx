@@ -8,6 +8,9 @@ import { server } from "@/test/server";
 import { getImmersionSessionHistoryMockHandler } from "@/lib/api/generated/immersion.msw";
 import type { SessionHistoryItemResponseDto } from "@/lib/api/generated/models";
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
 const sessions: SessionHistoryItemResponseDto[] = [
   {
     id: "one",
@@ -28,6 +31,20 @@ const sessions: SessionHistoryItemResponseDto[] = [
 ];
 
 describe("History", () => {
+  it("opens the content detail when a history session is clicked", async () => {
+    const user = userEvent.setup();
+    router.push.mockClear();
+    server.use(getImmersionSessionHistoryMockHandler({ items: sessions, total: 2, page: 1, limit: 4 }));
+    renderWithQuery(<History />);
+
+    const history = await screen.findByRole("table", { name: "Immersion history" });
+    const sessionLink = within(history).getByRole("link", { name: "A Japanese novel" });
+    expect(sessionLink).toHaveAttribute("href", "/content/content-one");
+    await user.click(within(history).getByRole("cell", { name: "Oct 20, 2026" }));
+
+    expect(router.push).toHaveBeenCalledWith("/content/content-one");
+  });
+
   it("shows server sessions and uses backend totals to change pages", async () => {
     const user = userEvent.setup();
     const requests: URL[] = [];
@@ -335,6 +352,98 @@ describe("History", () => {
       duration: 7200,
       created_at: "2026-10-20",
     });
+  });
+
+  it.each([
+    { type: "anime" as const, defaultEpisodeMinutes: "24", duration: 1500 },
+    { type: "drama" as const, defaultEpisodeMinutes: "60", duration: 3600 },
+  ])(
+    "uses the $type episode duration default when editing a session without progress",
+    async ({ type, defaultEpisodeMinutes, duration }) => {
+      const user = userEvent.setup();
+      let updateBody: unknown;
+      const session = { ...sessions[1], type, duration };
+      server.use(
+        getImmersionSessionHistoryMockHandler({
+          items: [session],
+          total: 1,
+          page: 1,
+          limit: 4,
+        }),
+        http.patch("*/immersion-session/:id", async ({ request }) => {
+          updateBody = await request.json();
+          return HttpResponse.json({ _id: session.id });
+        }),
+      );
+      renderWithQuery(<History />);
+
+      const table = await screen.findByRole("table", {
+        name: "Immersion history",
+      });
+      await user.click(
+        within(table).getByRole("button", { name: `Edit ${session.title}` }),
+      );
+      const dialog = await screen.findByRole("dialog", { name: "Edit session" });
+      expect(
+        within(dialog).getByRole("spinbutton", { name: "Episode duration" }),
+      ).toHaveValue(Number(defaultEpisodeMinutes));
+      expect(
+        within(dialog).getByRole("textbox", { name: "Episodes watched" }),
+      ).toHaveValue("");
+
+      await user.click(
+        within(dialog).getByRole("button", { name: "Save changes" }),
+      );
+
+      await waitFor(() => expect(updateBody).toBeDefined());
+      expect(updateBody).toMatchObject({
+        created_at: "2026-10-19",
+        duration,
+      });
+      expect(updateBody).not.toHaveProperty("progress");
+    },
+  );
+
+  it("requires an existing episode range when editing a session with progress", async () => {
+    const user = userEvent.setup();
+    let updateCount = 0;
+    const session: SessionHistoryItemResponseDto = {
+      ...sessions[1],
+      duration: 1440,
+      progress: { unit: "episode", start: 4, end: 4 },
+    };
+    server.use(
+      getImmersionSessionHistoryMockHandler({
+        items: [session],
+        total: 1,
+        page: 1,
+        limit: 4,
+      }),
+      http.patch("*/immersion-session/:id", () => {
+        updateCount += 1;
+        return HttpResponse.json({ _id: session.id });
+      }),
+    );
+    renderWithQuery(<History />);
+
+    const table = await screen.findByRole("table", {
+      name: "Immersion history",
+    });
+    await user.click(
+      within(table).getByRole("button", { name: `Edit ${session.title}` }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Edit session" });
+    await user.clear(within(dialog).getByRole("textbox", { name: "Episodes watched" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Save changes" }),
+    );
+
+    expect(
+      await within(dialog).findByText(
+        "Enter an episode number or range, such as 4 or 61–64.",
+      ),
+    ).toBeVisible();
+    expect(updateCount).toBe(0);
   });
 
   it("deletes a session after confirmation and refreshes the list", async () => {

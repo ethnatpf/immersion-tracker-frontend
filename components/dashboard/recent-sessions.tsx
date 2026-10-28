@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { toast } from "sonner";
 import { useImmersionSessionHistory } from "@/lib/api/generated/immersion";
 import type {
   SessionHistoryItemResponseDtoType,
@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/shadcn/skeleton";
 import { QueryError } from "@/components/error/query-error";
 import { SessionActions } from "@/components/session-actions";
 import { sessionMediaStyles } from "@/components/session-media";
+import { contentDetailPath } from "@/lib/content";
 
 function MediaBadge({ type }: { type: SessionHistoryItemResponseDtoType }) {
   const { icon: Icon, label, color, background } = sessionMediaStyles[type];
@@ -44,10 +45,6 @@ function SessionDate({ date }: { date: string }) {
   );
 }
 
-function showNotImplementedToast() {
-  toast("Not implemented yet", { id: "not-implemented" });
-}
-
 function isInteractiveRowTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
@@ -57,6 +54,7 @@ function isInteractiveRowTarget(target: EventTarget | null) {
 }
 
 export function RecentSessions() {
+  const router = useRouter();
   const history = useImmersionSessionHistory(
     { page: 1, limit: 5 },
     { query: { retry: false } },
@@ -128,23 +126,22 @@ export function RecentSessions() {
                   {data.items.map((session) => (
                     <TableRow
                       key={session.id}
-                      className="h-[60px] cursor-pointer border-border hover:bg-accent/40"
+                      className="h-[60px] cursor-pointer border-border hover:bg-accent/40 focus-visible:outline-2 focus-visible:outline-primary"
                       onClick={(event) => {
                         if (isInteractiveRowTarget(event.target)) return;
-                        showNotImplementedToast();
+                        router.push(contentDetailPath(session.content_id));
                       }}
                     >
                       <TableCell className="pl-0 pr-5">
                         <MediaBadge type={session.type} />
                       </TableCell>
                       <TableCell className="max-w-[340px] whitespace-normal px-3 text-[13px] font-medium">
-                        <button
-                          type="button"
-                          className="text-left outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring hover:underline"
-                          onClick={showNotImplementedToast}
+                        <Link
+                          href={contentDetailPath(session.content_id)}
+                          className="text-left outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {session.title}
-                        </button>
+                        </Link>
                       </TableCell>
                       <TableCell className="px-3 text-[13px] tabular-nums">
                         {formatDuration(session.duration)}
@@ -170,7 +167,7 @@ export function RecentSessions() {
                   className="cursor-pointer py-3"
                   onClick={(event) => {
                     if (isInteractiveRowTarget(event.target)) return;
-                    showNotImplementedToast();
+                    router.push(contentDetailPath(session.content_id));
                   }}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -178,13 +175,12 @@ export function RecentSessions() {
                     <SessionActions session={session} />
                   </div>
                   <h3 className="mt-2 min-h-10 text-sm font-semibold leading-5">
-                    <button
-                      type="button"
-                      className="text-left outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring hover:underline"
-                      onClick={showNotImplementedToast}
+                    <Link
+                      href={contentDetailPath(session.content_id)}
+                      className="text-left outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {session.title}
-                    </button>
+                    </Link>
                   </h3>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="font-medium tabular-nums">

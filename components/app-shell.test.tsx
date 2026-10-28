@@ -17,6 +17,18 @@ function renderShell() {
 }
 
 describe("workspace navigation", () => {
+  it("links the brand to the dashboard and closes mobile navigation when selected", async () => {
+    const user = userEvent.setup(); renderShell();
+    const brandLinks = screen.getAllByRole("link", { name: "Go to dashboard", hidden: true });
+    expect(brandLinks.length).toBeGreaterThanOrEqual(2);
+    for (const link of brandLinks) expect(link).toHaveAttribute("href", "/");
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    const dialog = await screen.findByRole("dialog", { name: "Navigation" });
+    await user.click(within(dialog).getByRole("link", { name: "Go to dashboard" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
   it("links session actions to the form and closes mobile navigation", async () => {
     const user = userEvent.setup(); renderShell();
     expect(screen.getByRole("link", { name: "Log new session" })).toHaveAttribute("href", "/log-session");

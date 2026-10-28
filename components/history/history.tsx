@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Clock3, Search } from "lucide-react";
 import { useImmersionSessionHistory } from "@/lib/api/generated/immersion";
 import type {
@@ -32,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/shadcn/table";
+import { contentDetailPath } from "@/lib/content";
 
 const PAGE_SIZE = 4;
 type Category = "all" | "reading" | "watching";
@@ -73,9 +76,11 @@ function SessionDate({ date }: { date: string }) {
 function DesktopRows({
   items,
   onDeleted,
+  onView,
 }: {
   items: Session[];
   onDeleted: () => void;
+  onView: (contentId: string) => void;
 }) {
   return (
     <Table aria-label="Immersion history" className="table-fixed text-left">
@@ -96,9 +101,21 @@ function DesktopRows({
       </TableHeader>
       <TableBody>
         {items.map((session) => (
-          <TableRow key={session.id} className="h-[100px] border-border">
+          <TableRow
+            key={session.id}
+            onClick={(event) => {
+              if (event.target instanceof Element && event.target.closest("button, a, [role='menuitem'], [role='dialog']")) return;
+              onView(session.content_id);
+            }}
+            className="h-[100px] cursor-pointer border-border hover:bg-accent/40 focus-visible:outline-2 focus-visible:outline-primary"
+          >
             <TableCell className="px-6 text-sm font-medium">
-              <span className="block truncate">{session.title}</span>
+              <Link
+                href={contentDetailPath(session.content_id)}
+                className="block truncate rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {session.title}
+              </Link>
             </TableCell>
             <TableCell className="px-3">
               <SessionBadge session={session} />
@@ -128,18 +145,31 @@ function DesktopRows({
 function MobileRows({
   items,
   onDeleted,
+  onView,
 }: {
   items: Session[];
   onDeleted: () => void;
+  onView: (contentId: string) => void;
 }) {
   return (
     <ul aria-label="Immersion history" className="space-y-4">
       {items.map((session) => (
         <li key={session.id}>
-          <Card className="gap-0 rounded-2xl border border-border bg-white p-4 ring-0">
+          <Card
+            onClick={(event) => {
+              if (event.target instanceof Element && event.target.closest("button, a, [role='menuitem'], [role='dialog']")) return;
+              onView(session.content_id);
+            }}
+            className="cursor-pointer gap-0 rounded-2xl border border-border bg-white p-4 ring-0 focus-visible:outline-2 focus-visible:outline-primary"
+          >
             <SessionBadge session={session} />
             <h2 className="mt-4 min-h-10 text-sm font-semibold">
-              {session.title}
+              <Link
+                href={contentDetailPath(session.content_id)}
+                className="rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {session.title}
+              </Link>
             </h2>
             <p className="mt-2 text-xs text-muted-foreground">
               <SessionDate date={session.created_at} />
@@ -162,6 +192,7 @@ function MobileRows({
 }
 
 export function History() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -196,6 +227,7 @@ export function History() {
   const onDeleted = () => {
     if (lastItemOnPage) setPage(page - 1);
   };
+  const onView = (contentId: string) => router.push(contentDetailPath(contentId));
 
   return (
     <Tabs
@@ -288,7 +320,7 @@ export function History() {
                   {data.items.length ? (
                     <>
                       <Card className="hidden gap-0 overflow-hidden rounded-2xl border border-border bg-white p-0 ring-0 md:block">
-                        <DesktopRows items={data.items} onDeleted={onDeleted} />
+                        <DesktopRows items={data.items} onDeleted={onDeleted} onView={onView} />
                         <Pagination
                           page={page}
                           pageSize={PAGE_SIZE}
@@ -298,7 +330,7 @@ export function History() {
                         />
                       </Card>
                       <div className="md:hidden">
-                        <MobileRows items={data.items} onDeleted={onDeleted} />
+                        <MobileRows items={data.items} onDeleted={onDeleted} onView={onView} />
                         <Pagination
                           page={page}
                           pageSize={PAGE_SIZE}

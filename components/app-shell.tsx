@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Clock, Layers, LayoutGrid, LogOut, Menu, Plus, Timer, UserRound, X } from "lucide-react";
+import { ChevronRight, Clock, LayoutGrid, LogOut, Menu, Plus, Timer, UserRound, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/shadcn/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shadcn/dropdown-menu";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/shadcn/sheet";
@@ -11,17 +12,25 @@ import { cn } from "@/lib/utils";
 import { ApiErrorBoundary } from "@/components/error/api-error-boundary";
 import { TimerFeature, type TimerFeatureHandle } from "@/components/timer/timer-feature";
 
-function Brand({ mobile = false }: { mobile?: boolean }) {
+function Brand({ mobile = false, onClick }: { mobile?: boolean; onClick?: () => void }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[11px] bg-primary text-white", mobile && "size-8 rounded-[10px]")}>
-        <Layers aria-hidden="true" className={mobile ? "size-[18px]" : "size-[22px]"} />
-      </span>
-      <div>
-        <span className={cn("text-xl font-semibold leading-7", mobile && "text-[19px]")}>Immersion</span>
-        {!mobile && <p className="text-[11px] leading-4 text-muted-foreground">A little, every day.</p>}
+    <Link href="/" aria-label="Go to dashboard" onClick={onClick} className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <div className="flex items-center gap-3">
+        <Image
+          src="/immersion-mark.svg"
+          alt=""
+          width={36}
+          height={36}
+          unoptimized
+          aria-hidden="true"
+          className={cn("size-9 shrink-0", mobile && "size-8")}
+        />
+        <div>
+          <span className={cn("text-xl font-semibold leading-7", mobile && "text-[19px]")}>Immersion</span>
+          {!mobile && <p className="text-[11px] leading-4 text-muted-foreground">A little, every day.</p>}
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -109,7 +118,7 @@ export function AppShell({ children, email }: { children: ReactNode; email?: str
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <SheetDescription className="sr-only">Your immersion workspace and session actions.</SheetDescription>
             <div className="mx-5 mb-7 flex min-h-[101px] items-center justify-between gap-2 border-b border-border">
-              <Brand />
+              <Brand onClick={() => setMobileOpen(false)} />
               <SheetClose aria-label="Close navigation" render={<Button variant="ghost" className="size-11 rounded-xl bg-background" />}><X aria-hidden="true" className="size-5 text-muted-foreground" /></SheetClose>
             </div>
             <Navigation mobile onSelect={() => setMobileOpen(false)} onStartTimer={onStartTimer} />

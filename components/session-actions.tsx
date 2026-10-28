@@ -38,7 +38,6 @@ export function SessionActions({
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
   async function refreshSessionViews() {
     await Promise.all([
       client.invalidateQueries({
