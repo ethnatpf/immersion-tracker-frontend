@@ -31,7 +31,7 @@ jobs:
       backend:
         image: ghcr.io/ethnatpf/immersion-tracker-backend:stable
         command: >-
-          /bin/sh -c 'node dist/scripts/seed.js && exec node dist/main.js'
+          /bin/sh -c "node dist/scripts/seed.js && exec node dist/main.js"
         env:
           MONGODB_URL: mongodb://mongodb:27017/immersion-tracker?replicaSet=rs0
           AUTH_ISSUER_BASE_URL: https://auth.ethnatpf.com/
