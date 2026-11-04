@@ -1,0 +1,74 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:9.0.4
+        command: mongod --replSet rs0 --bind_ip_all
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval \"try { rs.status(); } catch (error) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]}); quit(1); } if (!db.hello().isWritablePrimary) quit(1);\""
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      backend:
+        image: ghcr.io/ethnatpf/immersion-tracker-backend:stable
+        env:
+          MONGODB_URL: mongodb://mongodb:27017/immersion-tracker?replicaSet=rs0
+          AUTH_ISSUER_BASE_URL: https://auth.ethnatpf.com/
+          AUTH_AUDIENCE: https://immersion-tracker-api.ethnatpf.com
+        ports:
+          - 4000:4000
+    env:
+      CI: true
+      APP_BASE_URL: http://localhost:3000
+      AUTH0_DOMAIN: auth.ethnatpf.com
+      AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+      AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+      AUTH0_AUDIENCE: https://immersion-tracker-api.ethnatpf.com
+      AUTH0_SECRET: ${{ secrets.AUTH0_SECRET }}
+      API_URL: http://localhost:4000
+      E2E_AUTH_EMAIL: ${{ secrets.E2E_AUTH_EMAIL }}
+      E2E_AUTH_PASSWORD: ${{ secrets.E2E_AUTH_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check required Auth0 test secrets
+        run: |
+          for name in AUTH0_CLIENT_ID AUTH0_CLIENT_SECRET AUTH0_SECRET E2E_AUTH_EMAIL E2E_AUTH_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required GitHub secret for $name"
+              exit 1
+            fi
+          done
+
+      - name: Wait for backend
+        run: curl --fail --retry 30 --retry-connrefused --retry-delay 2 --retry-max-time 60 http://localhost:4000/api-json
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run all tests
+        run: bun run test:all

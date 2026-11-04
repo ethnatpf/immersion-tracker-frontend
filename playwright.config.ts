@@ -2,7 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 import { existsSync } from "node:fs";
 
 const credentialsFile = "playwright/credentials.local.json";
-const hasCredentials = existsSync(credentialsFile);
+const hasCredentials =
+  existsSync(credentialsFile) ||
+  Boolean(process.env.E2E_AUTH_EMAIL && process.env.E2E_AUTH_PASSWORD);
 const authState =
   process.env.E2E_AUTH_STATE ??
   (hasCredentials ? "playwright/.auth/user.json" : undefined);

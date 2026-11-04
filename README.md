@@ -89,3 +89,15 @@ bun run test:e2e
 ```
 
 Without either the credentials file or an `E2E_AUTH_STATE` file, authenticated journeys are skipped.
+
+## Deployment environment
+
+Set these variables when running the frontend image:
+
+- `APP_BASE_URL` — public frontend origin
+- `API_URL` — backend origin
+- `AUTH0_DOMAIN=auth.ethnatpf.com`
+- `AUTH0_AUDIENCE=https://immersion-tracker-api.ethnatpf.com`
+- `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and `AUTH0_SECRET`
+
+GitHub Actions also requires `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`, `E2E_AUTH_EMAIL`, and `E2E_AUTH_PASSWORD` as repository secrets for the test workflow.

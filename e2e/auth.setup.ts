@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { expect, test as setup } from "@playwright/test";
@@ -7,10 +8,15 @@ const authStatePath =
   process.env.E2E_AUTH_STATE ?? "playwright/.auth/user.json";
 
 setup("sign in with the local E2E account", async ({ page }) => {
-  const credentials = JSON.parse(await readFile(credentialsPath, "utf8")) as {
-    email: string;
-    password: string;
-  };
+  const credentials = existsSync(credentialsPath)
+    ? (JSON.parse(await readFile(credentialsPath, "utf8")) as {
+        email: string;
+        password: string;
+      })
+    : {
+        email: process.env.E2E_AUTH_EMAIL,
+        password: process.env.E2E_AUTH_PASSWORD,
+      };
 
   if (!credentials.email || !credentials.password) {
     throw new Error(`Add an email and password to ${credentialsPath}.`);

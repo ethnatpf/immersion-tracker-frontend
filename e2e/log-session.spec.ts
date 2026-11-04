@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
-const hasCredentials = existsSync("playwright/credentials.local.json");
+const hasCredentials =
+  existsSync("playwright/credentials.local.json") ||
+  Boolean(process.env.E2E_AUTH_EMAIL && process.env.E2E_AUTH_PASSWORD);
 const authState =
   process.env.E2E_AUTH_STATE ??
   (hasCredentials ? "playwright/.auth/user.json" : undefined);
