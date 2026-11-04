@@ -54,6 +54,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install unzip for Bun setup
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
+
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
