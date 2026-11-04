@@ -80,8 +80,5 @@ jobs:
             fi
           done
 
-      - name: Wait for backend
-        run: curl --fail --retry 30 --retry-connrefused --retry-delay 2 --retry-max-time 60 http://backend:4000/health
-
       - name: Run all tests
         run: bun run test:all
