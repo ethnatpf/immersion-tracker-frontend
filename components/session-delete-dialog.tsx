@@ -51,7 +51,7 @@ export function SessionDeleteDialog({
               variant="outline"
               disabled={busy}
               onClick={() => onOpenChange(false)}
-              className="h-11 w-full sm:w-[108px]"
+              className="h-11 w-full sm:flex-1 sm:w-auto"
             >
               Cancel
             </Button>
@@ -59,7 +59,7 @@ export function SessionDeleteDialog({
               variant="destructive"
               disabled={busy}
               onClick={onConfirm}
-              className="h-11 w-full sm:w-[196px]"
+              className="h-11 w-full sm:flex-1 sm:w-auto"
             >
               {busy ? "Deleting…" : "Delete session"}
             </Button>
