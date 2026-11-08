@@ -101,3 +101,4 @@ Set these variables when running the frontend image:
 - `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and `AUTH0_SECRET`
 
 GitHub Actions also requires `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`, `E2E_AUTH_EMAIL`, and `E2E_AUTH_PASSWORD` as repository secrets for the test workflow.
+  
