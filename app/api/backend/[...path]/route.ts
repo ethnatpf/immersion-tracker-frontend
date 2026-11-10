@@ -52,6 +52,12 @@ async function forward(
   const { path } = await context.params;
 
   const endpoint = path.join("/");
+  const isFaroCollector = endpoint === "observability/faro/collect";
+  if (isFaroCollector) {
+    console.log(
+      JSON.stringify({ event: "faro-proxy-received", method, endpoint }),
+    );
+  }
   const authorizedPath =
     path.length === 2 && path[0] === "immersion-session"
       ? "immersion-session/:id"
@@ -97,6 +103,15 @@ async function forward(
       redirect: "error",
       signal: request.signal,
     });
+    if (isFaroCollector) {
+      console.log(
+        JSON.stringify({
+          event: "faro-proxy-upstream-response",
+          status: upstream.status,
+          requestAborted: request.signal.aborted,
+        }),
+      );
+    }
     phase = "build-response";
     const headers = new Headers(privateHeaders);
     const requestId = upstream.headers.get("X-Request-ID");
@@ -120,13 +135,16 @@ async function forward(
       headers,
     });
   } catch (error) {
-    console.error("Backend proxy request failed", {
+    console.error(JSON.stringify({
+      event: isFaroCollector ? "faro-proxy-failed" : "backend-proxy-failed",
       endpoint,
       method,
       phase,
       requestAborted: request.signal.aborted,
-      error,
-    });
+      errorName: error instanceof Error ? error.name : undefined,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    }));
     return Response.json(
       { message: "The API is unavailable. Please try again." },
       { status: 502, headers: privateHeaders },
