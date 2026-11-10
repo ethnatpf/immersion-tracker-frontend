@@ -8,11 +8,17 @@ import { TooltipProvider } from "@/components/shadcn/tooltip";
 import { mutationDefaults } from "@/lib/mutation-options";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { setFaroRoute } from "@/instrumentation-client";
+import { normalizeRoute } from "@/lib/observability/normalize-route";
+
+type FaroWindow = Window & {
+  faro?: { api: { setView: (view: { name: string }) => void } };
+};
 
 export function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: queryDefaults, mutations: mutationDefaults } }));
-  useEffect(() => setFaroRoute(pathname), [pathname]);
+  useEffect(() => {
+    (window as FaroWindow).faro?.api.setView({ name: normalizeRoute(pathname) });
+  }, [pathname]);
   return <QueryClientProvider client={queryClient}><TooltipProvider>{children}</TooltipProvider><Toaster position="bottom-right" /></QueryClientProvider>;
 }
