@@ -18,6 +18,25 @@ beforeEach(() => {
 });
 
 describe("authenticated API proxy", () => {
+  it("forwards Faro collector payloads to the observability backend route", async () => {
+    const payload = JSON.stringify({ events: [{ name: "faro.event" }] });
+    const response = await POST(
+      new Request("http://frontend.test/api/backend/observability/faro/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }),
+      context("observability/faro/collect"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(upstream.mock.calls[0][0].toString()).toBe(
+      "http://backend.test:4000/observability/faro/collect",
+    );
+    expect(upstream.mock.calls[0][1].method).toBe("POST");
+    expect(upstream.mock.calls[0][1].body).toBe(payload);
+  });
+
   it("forwards the timer lookup and start/stop actions", async () => {
     const lookup = await GET(new Request("http://frontend.test/api/backend/timer"), context("timer"));
     expect(lookup.status).toBe(200);
