@@ -4,8 +4,9 @@ import {
   initializeFaro,
   WebVitalsInstrumentation,
 } from "@grafana/faro-web-sdk";
+import { normalizeRoute } from "@/lib/observability/normalize-route";
 
-initializeFaro({
+export const faro = initializeFaro({
   app: {
     name: "immersion-tracker-frontend",
   },
@@ -18,3 +19,7 @@ initializeFaro({
     new FetchTransport({ url: "/api/backend/observability/faro/collect" }),
   ],
 });
+
+export function setFaroRoute(route: string) {
+  faro.api.setView({ name: normalizeRoute(route) });
+}
