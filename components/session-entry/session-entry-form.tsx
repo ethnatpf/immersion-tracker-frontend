@@ -37,7 +37,10 @@ import {
   type SessionEntry,
 } from "@/lib/session-entry";
 import { cn } from "@/lib/utils";
-import { sessionMediaStyles, SessionTypeIcon } from "@/components/session-media";
+import {
+  sessionMediaStyles,
+  SessionTypeIcon,
+} from "@/components/session-media";
 
 const contentTypes = ["anime", "drama", "video", "manga", "book"] as const;
 
@@ -87,6 +90,7 @@ export function SessionEntryForm() {
     pageEnd: "",
   }));
   const [selected, setSelected] = useState<ContentChoice | null>(null);
+
   return (
     <ApiErrorBoundary>
       <SessionFormBody
@@ -547,7 +551,8 @@ function SessionFormBody({
                     })}
                     {entry.type === "anime" && (
                       <p className="mt-2 text-[11px] text-muted-foreground">
-                        Standard TV anime length: {DEFAULT_EPISODE_MINUTES.anime} min.
+                        Standard TV anime length:{" "}
+                        {DEFAULT_EPISODE_MINUTES.anime} min.
                       </p>
                     )}
                   </div>

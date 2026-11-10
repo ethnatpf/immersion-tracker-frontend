@@ -12,6 +12,7 @@ const authorizedPaths = new Map<string, readonly string[]>([
   ["timer", ["GET"]],
   ["timer/start", ["POST"]],
   ["timer/stop", ["POST"]],
+  ["observability/faro/collect", ["POST"]],
 ]);
 const privateHeaders = { "Cache-Control": "private, no-store" };
 
