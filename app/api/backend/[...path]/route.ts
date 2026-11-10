@@ -79,8 +79,12 @@ async function forward(
   const upstreamUrl = new URL(`${baseUrl.replace(/\/$/, "")}/${endpoint}`);
   upstreamUrl.search = new URL(request.url).search;
 
+  let phase = "prepare-request";
   try {
     const hasBody = method !== "GET" && method !== "HEAD";
+    phase = hasBody ? "read-request-body" : "fetch-upstream";
+    const body = hasBody ? await request.text() : undefined;
+    phase = "fetch-upstream";
     const upstream = await fetch(upstreamUrl, {
       method,
       headers: {
@@ -88,11 +92,12 @@ async function forward(
         Accept: "application/json",
         ...(hasBody ? { "Content-Type": "application/json" } : {}),
       },
-      ...(hasBody ? { body: await request.text() } : {}),
+      ...(hasBody ? { body } : {}),
       cache: "no-store",
       redirect: "error",
       signal: request.signal,
     });
+    phase = "build-response";
     const headers = new Headers(privateHeaders);
     const requestId = upstream.headers.get("X-Request-ID");
     if (requestId) headers.set("X-Request-ID", requestId);
@@ -115,7 +120,13 @@ async function forward(
       headers,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Backend proxy request failed", {
+      endpoint,
+      method,
+      phase,
+      requestAborted: request.signal.aborted,
+      error,
+    });
     return Response.json(
       { message: "The API is unavailable. Please try again." },
       { status: 502, headers: privateHeaders },
