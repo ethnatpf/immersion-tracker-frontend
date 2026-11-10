@@ -114,7 +114,8 @@ async function forward(
       status: upstream.status,
       headers,
     });
-  } catch {
+  } catch (error) {
+    console.error(error);
     return Response.json(
       { message: "The API is unavailable. Please try again." },
       { status: 502, headers: privateHeaders },
