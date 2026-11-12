@@ -247,7 +247,11 @@ export function TimerFeature({
     !current.isError && current.data && typeof current.data === "object"
       ? current.data
       : null;
-  const noTimer = current.isSuccess && !current.data;
+  const noTimer =
+    (current.isSuccess && !current.data) ||
+    (current.isError &&
+      current.error instanceof ApiError &&
+      current.error.status === 404);
   const currentError = current.isError && !noTimer;
   const language = languageId;
   const needsLanguage = !presetContent;
@@ -278,7 +282,12 @@ export function TimerFeature({
       toast.warning("Stop the existing timer first.");
       return;
     }
-    if (latest.error) return;
+    if (
+      latest.error &&
+      !(latest.error instanceof ApiError && latest.error.status === 404)
+    ) {
+      return;
+    }
     if (content) {
       setType(content.type);
       setTitle(content.title);
