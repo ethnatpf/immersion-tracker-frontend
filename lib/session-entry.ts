@@ -4,6 +4,13 @@ import type {
 } from "@/lib/api/generated/models";
 import { z } from "zod";
 import { isUnsignedIntegerInRange } from "@/lib/number";
+import {
+  dateTimeInputToTimestamp,
+  isLocalDateTimeInPastOrPresent,
+  isValidLocalDateInput,
+  isValidLocalDateTimeInput,
+  isValidLocalTimeInput,
+} from "@/lib/date";
 
 export type SessionEntry = {
   type: CreateContentDtoType;
@@ -11,6 +18,7 @@ export type SessionEntry = {
   title: string;
   url: string;
   date: string;
+  time: string;
   episodes: string;
   episodeMinutes: string;
   hours: string;
@@ -78,13 +86,10 @@ export const sessionEntrySchema = z
     date: z
       .string()
       .refine(
-        (value) =>
-          /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-          !Number.isNaN(Date.parse(value)) &&
-          new Date(value).toISOString().slice(0, 10) === value &&
-          value <= new Date().toISOString().slice(0, 10),
-        "Choose a valid date no later than today (UTC).",
+        (value) => isValidLocalDateInput(value),
+        "Choose a valid date no later than today.",
       ),
+    time: z.string().refine(isValidLocalTimeInput, "Choose a valid time."),
     episodes: z.string(),
     episodeMinutes: z.string(),
     hours: z.string(),
@@ -95,6 +100,13 @@ export const sessionEntrySchema = z
   .superRefine((entry, ctx) => {
     const issue = (path: keyof SessionEntry, message: string) =>
       ctx.addIssue({ code: "custom", path: [path], message });
+    if (isValidLocalDateInput(entry.date) && isValidLocalTimeInput(entry.time)) {
+      if (!isValidLocalDateTimeInput(entry.date, entry.time)) {
+        issue("time", "This local time does not exist on the selected date.");
+      } else if (!isLocalDateTimeInPastOrPresent(entry.date, entry.time)) {
+        issue("time", "Choose a time that is not in the future.");
+      }
+    }
     if (usesManualDuration(entry.type)) {
       if (!isUnsignedIntegerInRange(entry.hours, 0))
         issue("hours", "Enter a whole number of hours, zero or more.");
@@ -149,7 +161,7 @@ export function sessionPayload(
   if (usesManualDuration(data.type)) {
     return {
       content,
-      created_at: data.date,
+      created_at: dateTimeInputToTimestamp(data.date, data.time),
       duration: Number(data.hours) * 3600 + Number(data.minutes) * 60,
       ...(isReading(data.type) && data.pageStart && data.pageEnd
         ? {
@@ -166,7 +178,7 @@ export function sessionPayload(
   const duration = episodeDurationSeconds(range, Number(data.episodeMinutes))!;
   return {
     content,
-    created_at: data.date,
+    created_at: dateTimeInputToTimestamp(data.date, data.time),
     duration,
     progress: { unit: "episode", ...range },
   };

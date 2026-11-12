@@ -8,7 +8,7 @@ import type {
   SessionHistoryItemResponseDtoType,
 } from "@/lib/api/generated/models";
 import { formatDuration } from "@/lib/duration";
-import { formatUtcDate } from "@/lib/date";
+import { LocalizedDate } from "@/components/localized-date";
 import { Card } from "@/components/shadcn/card";
 import {
   Table,
@@ -38,11 +38,7 @@ function MediaBadge({ type }: { type: SessionHistoryItemResponseDtoType }) {
 }
 
 function SessionDate({ date }: { date: string }) {
-  return (
-    <time dateTime={date}>
-      {formatUtcDate(date)}
-    </time>
-  );
+  return <LocalizedDate date={date} />;
 }
 
 function isInteractiveRowTarget(target: EventTarget | null) {
@@ -110,7 +106,7 @@ export function RecentSessions() {
               <Table aria-label="Recent immersion sessions">
                 <TableHeader className="bg-[#f8faf9]">
                   <TableRow className="border-0 hover:bg-transparent">
-                    {["Medium", "Title", "Duration", "Date (UTC)", ""].map(
+                    {["Medium", "Title", "Duration", "Date & time", ""].map(
                       (title) => (
                         <TableHead
                           key={title}

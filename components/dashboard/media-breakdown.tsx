@@ -175,7 +175,7 @@ export function MediaBreakdown({
             <caption>{title} data</caption>
             <thead>
               <tr>
-                <th scope="col">Date (UTC)</th>
+                <th scope="col">Date</th>
                 <th scope="col">Duration</th>
               </tr>
             </thead>

@@ -12,6 +12,5 @@ export interface CreateImmersionSessionDto {
   /** @minimum 1 */
   duration: number;
   progress?: SessionProgressDto;
-  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   created_at?: string;
 }

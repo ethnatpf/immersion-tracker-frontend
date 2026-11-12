@@ -23,6 +23,7 @@ import type {
   ContentSearchResponseDto,
   CurrentTimerResponseDto,
   DashboardStatisticsResponseDto,
+  FaroCollectResponseDto,
   ImmersionSessionResponseDto,
   LanguageResponseDto,
   SessionHistoryResponseDto,
@@ -47,7 +48,7 @@ export const getContentUpdateResponseMock = (overrideResponse: Partial<Extract<C
 
 export const getContentCreateResponseMock = (overrideResponse: Partial<Extract<ContentResponseDto, object>> = {}): ContentResponseDto => ({_id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), type: faker.helpers.arrayElement(['anime','book','manga','drama','video'] as const), user_id: faker.string.alpha({length: {min: 10, max: 20}}), language: faker.string.alpha({length: {min: 10, max: 20}}), completed: faker.datatype.boolean(), url: faker.helpers.arrayElement([faker.internet.url(), undefined]), ...overrideResponse})
 
-export const getTimerCurrentResponseMock = (overrideResponse: Partial<Extract<CurrentTimerResponseDto, object>> = {}): CurrentTimerResponseDto => ({id: faker.string.alpha({length: {min: 10, max: 20}}), content_id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), type: faker.helpers.arrayElement(['anime','book','manga','drama','video'] as const), started_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
+export const getTimerCurrentResponseMock = (): CurrentTimerResponseDto | null => ({...{id: faker.string.alpha({length: {min: 10, max: 20}}), content_id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), type: faker.helpers.arrayElement(['anime','book','manga','drama','video'] as const), started_at: faker.date.past().toISOString().slice(0, 19) + 'Z'},})
 
 export const getTimerStartResponseMock = (overrideResponse: Partial<Extract<TimerResponseDto, object>> = {}): TimerResponseDto => ({_id: faker.string.alpha({length: {min: 10, max: 20}}), content: faker.string.alpha({length: {min: 10, max: 20}}), user_id: faker.string.alpha({length: {min: 10, max: 20}}), started_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
@@ -58,6 +59,8 @@ export const getDashboardStatisticsResponseMock = (overrideResponse: Partial<Ext
 export const getUserPreferencesResponseMock = (overrideResponse: Partial<Extract<UserPreferencesResponseDto, object>> = {}): UserPreferencesResponseDto => ({preferred_language: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), ...overrideResponse})
 
 export const getMetricsResponseMock = (): string => (faker.word.sample())
+
+export const getObservabilityFaroCollectResponseMock = (overrideResponse: Partial<Extract<FaroCollectResponseDto, object>> = {}): FaroCollectResponseDto => ({accepted: faker.datatype.boolean(), ...overrideResponse})
 
 
 export const getImmersionSessionHistoryMockHandler = (overrideResponse?: SessionHistoryResponseDto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<SessionHistoryResponseDto> | SessionHistoryResponseDto), options?: RequestHandlerOptions) => {
@@ -166,7 +169,7 @@ export const getContentCreateMockHandler = (overrideResponse?: ContentResponseDt
   }, options)
 }
 
-export const getTimerCurrentMockHandler = (overrideResponse?: CurrentTimerResponseDto | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<CurrentTimerResponseDto> | CurrentTimerResponseDto), options?: RequestHandlerOptions) => {
+export const getTimerCurrentMockHandler = (overrideResponse?: CurrentTimerResponseDto | null | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<CurrentTimerResponseDto | null> | CurrentTimerResponseDto | null), options?: RequestHandlerOptions) => {
   return http.get('*/timer', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
 
 
@@ -238,6 +241,18 @@ export const getMetricsMockHandler = (overrideResponse?: string | ((info: Parame
       })
   }, options)
 }
+
+export const getObservabilityFaroCollectMockHandler = (overrideResponse?: FaroCollectResponseDto | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<FaroCollectResponseDto> | FaroCollectResponseDto), options?: RequestHandlerOptions) => {
+  return http.post('*/observability/faro/collect', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getObservabilityFaroCollectResponseMock(),
+      { status: 202
+      })
+  }, options)
+}
 export const getImmersionTrackerAPIMock = () => [
   getImmersionSessionHistoryMockHandler(),
   getImmersionSessionCreateMockHandler(),
@@ -253,5 +268,6 @@ export const getImmersionTrackerAPIMock = () => [
   getTimerStopMockHandler(),
   getDashboardStatisticsMockHandler(),
   getUserPreferencesMockHandler(),
-  getMetricsMockHandler()
+  getMetricsMockHandler(),
+  getObservabilityFaroCollectMockHandler()
 ]

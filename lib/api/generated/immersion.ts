@@ -34,6 +34,7 @@ import type {
   CurrentTimerResponseDto,
   DashboardStatisticsParams,
   DashboardStatisticsResponseDto,
+  FaroCollectResponseDto,
   ImmersionSessionHistoryParams,
   ImmersionSessionResponseDto,
   LanguageResponseDto,
@@ -873,9 +874,9 @@ export const getTimerCurrentUrl = () => {
   return `/api/backend/timer`
 }
 
-export const timerCurrent = async ( options?: Parameters<typeof apiFetch>[1]): Promise<CurrentTimerResponseDto> => {
+export const timerCurrent = async ( options?: Parameters<typeof apiFetch>[1]): Promise<CurrentTimerResponseDto | null> => {
 
-  return apiFetch<CurrentTimerResponseDto>(getTimerCurrentUrl(),
+  return apiFetch<CurrentTimerResponseDto | null>(getTimerCurrentUrl(),
   {
     ...options,
     method: 'GET'
@@ -1395,3 +1396,77 @@ export function useMetrics<TData = Awaited<ReturnType<typeof metrics>>, TError =
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
+export const getObservabilityFaroCollectUrl = () => {
+
+
+
+
+  return `/api/backend/observability/faro/collect`
+}
+
+export const observabilityFaroCollect = async ( options?: Parameters<typeof apiFetch>[1]): Promise<FaroCollectResponseDto> => {
+
+  return apiFetch<FaroCollectResponseDto>(getObservabilityFaroCollectUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getObservabilityFaroCollectMutationKey = () => ['observabilityFaroCollect'] as const;
+
+export const getObservabilityFaroCollectMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof observabilityFaroCollect>>, TError,void, TContext>, request?: SecondParameter<typeof apiFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof observabilityFaroCollect>>, TError,void, TContext> => {
+
+const mutationKey = getObservabilityFaroCollectMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof observabilityFaroCollect>>, void> = () => {
+
+
+          return  observabilityFaroCollect(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ObservabilityFaroCollectMutationResult = NonNullable<Awaited<ReturnType<typeof observabilityFaroCollect>>>
+
+    export type ObservabilityFaroCollectMutationError = void
+
+
+    export const useObservabilityFaroCollect = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof observabilityFaroCollect>>, TError,void, TContext>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof observabilityFaroCollect>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getObservabilityFaroCollectMutationOptions(options), queryClient);
+    }

@@ -8,6 +8,7 @@ import { Toaster } from "@/components/shadcn/sonner";
 import { SessionDialog } from "@/components/session-dialog";
 import { getDashboardStatisticsMockHandler, getImmersionSessionHistoryMockHandler, getLanguageListMockHandler, getUserPreferencesMockHandler } from "@/lib/api/generated/immersion.msw";
 import type { DashboardStatisticsResponseDto, LanguageResponseDto, SessionHistoryResponseDto } from "@/lib/api/generated/models";
+import { dateInputToTimestamp, dateTimeInputToTimestamp, formatUserDateTime, getUserTimeZone, timestampToDateInput } from "@/lib/date";
 import { Dashboard } from "./dashboard";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
@@ -35,7 +36,7 @@ const stats: DashboardStatisticsResponseDto = {
   breakdown: [{ start_date: "2026-10-19", reading_time: 1800, audiovisual_time: 7200 }, { start_date: "2026-10-20", reading_time: 1800, audiovisual_time: 3600 }],
 };
 const history: SessionHistoryResponseDto = {
-  items: [{ id: "session-1", content_id: "book-1", type: "book", title: "A Japanese novel", duration: 6300, created_at: "2026-10-24T15:00:00Z" }],
+  items: [{ id: "session-1", content_id: "book-1", type: "book", title: "A Japanese novel", duration: 6300, created_at: "2026-10-24T01:00:00Z" }],
   total: 1, page: 1, limit: 5,
 };
 let statisticsRequests: URL[];
@@ -63,7 +64,7 @@ describe("dashboard", () => {
         session={{
           type: "anime",
           title: "New anime",
-          created_at: "2026-10-24",
+          created_at: dateInputToTimestamp("2026-10-24"),
           duration: 0,
         }}
         open
@@ -81,7 +82,7 @@ describe("dashboard", () => {
 
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith({
-        created_at: "2026-10-24",
+        created_at: dateInputToTimestamp("2026-10-24"),
         duration: 1440,
         progress: { unit: "episode", start: 12, end: 12 },
       }),
@@ -102,13 +103,14 @@ describe("dashboard", () => {
     expect(screen.getByRole("combobox", { name: "Dashboard language" })).toHaveTextContent("Spanish");
     expect(statisticsRequests[0].searchParams.get("language")).toBe("es");
     expect(statisticsRequests[0].searchParams.get("range")).toBe("week");
+    expect(statisticsRequests[0].searchParams.get("timezone")).toBe(getUserTimeZone());
     expect(statisticsRequests[0].pathname).toBe("/api/backend/dashboard/statistics");
     const chart = screen.getByRole("region", { name: "Reading media breakdown" });
     expect(within(chart).getByRole("table", { name: "Reading media breakdown data", hidden: true })).toHaveTextContent("00:30:00");
     const recent = await screen.findByRole("table", { name: "Recent immersion sessions" });
     expect(within(recent).getByText("A Japanese novel")).toBeVisible();
     expect(within(recent).getByText("01:45:00")).toBeVisible();
-    expect(within(recent).getByText("Oct 24, 2026")).toBeVisible();
+    expect(within(recent).getByText(formatUserDateTime(history.items[0].created_at))).toBeVisible();
     expect(screen.getByRole("link", { name: "View complete history" })).toHaveAttribute("href", "/history");
   });
 
@@ -355,7 +357,7 @@ describe("dashboard", () => {
     releaseRefresh();
     await waitFor(() =>
       expect(updateBody).toEqual({
-        created_at: "2026-10-24",
+        created_at: new Date(history.items[0].created_at).toISOString(),
         duration: 5400,
         progress: { unit: "episode", start: 2, end: 4 },
       }),
@@ -395,12 +397,19 @@ describe("dashboard", () => {
     expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(45);
     expect(screen.queryByRole("textbox", { name: "Episodes watched" })).not.toBeInTheDocument();
 
+    const sessionTime = screen.getByLabelText("Choose session time");
+    await user.clear(sessionTime);
+    await user.type(sessionTime, "14:35");
+
     await user.clear(screen.getByRole("spinbutton", { name: "Page from" }));
     await user.type(screen.getByRole("spinbutton", { name: "Page from" }), "160");
     await user.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() =>
       expect(updateBody).toEqual({
-        created_at: "2026-10-24",
+        created_at: dateTimeInputToTimestamp(
+          timestampToDateInput(history.items[0].created_at),
+          "14:35",
+        ),
         duration: 6300,
         progress: { unit: "page", start: 160, end: 188 },
       }),

@@ -19,6 +19,7 @@ import type {
   ImmersionSessionResponseDto,
 } from "@/lib/api/generated/models";
 import { SessionEntryForm } from "./session-entry-form";
+import { dateTimeInputToTimestamp } from "@/lib/date";
 import { Dashboard } from "@/components/dashboard/dashboard";
 import {
   getDashboardStatisticsMockHandler,
@@ -95,7 +96,7 @@ beforeEach(() => {
 
 async function selectExisting() {
   const user = userEvent.setup();
-  await screen.findByText("Japanese (日本語)");
+  await screen.findAllByText("Japanese (日本語)");
   const input = await screen.findByRole("combobox", { name: "Title / search" });
   await waitFor(() => expect(input).toBeEnabled());
   await user.type(input, "Fullmetal");
@@ -189,7 +190,7 @@ describe("session entry form", () => {
   );
   it("supports choosing a log date with the keyboard", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-10-25T00:30:00Z"));
+    vi.setSystemTime(new Date("2026-10-25T16:30:00Z"));
     const user = userEvent.setup();
     renderWithQuery(<SessionEntryForm />);
     await user.click(screen.getByRole("button", { name: "Log date" }));
@@ -251,7 +252,7 @@ describe("session entry form", () => {
   });
   it("selects a log date from the calendar and saves that calendar day", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-10-25T00:30:00Z"));
+    vi.setSystemTime(new Date("2026-10-25T16:30:00Z"));
     renderWithQuery(<SessionEntryForm />);
     const user = await selectExisting();
     const trigger = screen.getByRole("button", { name: "Log date" });
@@ -268,9 +269,62 @@ describe("session entry form", () => {
       "Sep 30, 2026",
     );
     expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+    const logTime = screen.getByLabelText("Log time");
+    await user.clear(logTime);
+    await user.type(logTime, "14:35");
     await user.click(screen.getByRole("button", { name: "Save session" }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/"));
-    expect(writes[0].created_at).toBe("2026-09-30");
+    expect(writes[0].created_at).toBe(
+      dateTimeInputToTimestamp("2026-09-30", "14:35"),
+    );
+  });
+
+  it("rejects a local time skipped by daylight saving", async () => {
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-03-08T16:00:00Z"));
+
+    try {
+      renderWithQuery(<SessionEntryForm />);
+      const user = await selectExisting();
+      const logTime = screen.getByLabelText("Log time");
+      await user.clear(logTime);
+      await user.type(logTime, "02:30");
+      await user.click(screen.getByRole("button", { name: "Save session" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "This local time does not exist on the selected date.",
+      );
+      expect(writes).toHaveLength(0);
+    } finally {
+      if (previousTimeZone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimeZone;
+    }
+  });
+
+  it("rejects a time later today", async () => {
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-03-10T16:00:00Z"));
+
+    try {
+      renderWithQuery(<SessionEntryForm />);
+      const user = await selectExisting();
+      const logTime = screen.getByLabelText("Log time");
+      await user.clear(logTime);
+      await user.type(logTime, "13:00");
+      await user.click(screen.getByRole("button", { name: "Save session" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Choose a time that is not in the future.",
+      );
+      expect(writes).toHaveLength(0);
+    } finally {
+      if (previousTimeZone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimeZone;
+    }
   });
 
   it("searches languages by native name and selects with the keyboard", async () => {

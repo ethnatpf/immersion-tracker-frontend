@@ -12,5 +12,10 @@ export type DashboardStatisticsParams = {
  * Language ID
  */
 language: string;
+/**
+ * IANA timezone used for calendar boundaries and buckets
+ * @pattern ^(?![+-]\d{2}(?::?\d{2})?$)
+ */
+timezone: string;
 range: DashboardStatisticsRange;
 };
