@@ -7,7 +7,7 @@
  */
 
 export interface DashboardBucketResponseDto {
-  /** Bucket start date in UTC */
+  /** Bucket start date in the requested timezone */
   start_date: string;
   /** Reading duration in seconds */
   reading_time: number;

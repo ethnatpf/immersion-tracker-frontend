@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { dateInputToTimestamp } from "@/lib/date";
 import {
   episodeRange,
   episodeDurationSeconds,
@@ -12,6 +13,7 @@ export const entry: SessionEntry = {
   title: "A title",
   url: "",
   date: "2026-01-01",
+  time: "00:00:00",
   episodes: "61–64",
   episodeMinutes: "24",
   hours: "0",
@@ -21,6 +23,13 @@ export const entry: SessionEntry = {
 };
 
 describe("session entry", () => {
+  it("sends the selected local time with the session date", () => {
+    const selectedTimeEntry = { ...entry, time: "14:35:00" } as SessionEntry;
+    expect(sessionPayload(selectedTimeEntry, "lecture").created_at).toBe(
+      new Date(2026, 0, 1, 14, 35).toISOString(),
+    );
+  });
+
   it("logs video viewing time without episode or page progress", () => {
     expect(
       sessionPayload(
@@ -36,7 +45,7 @@ describe("session entry", () => {
         },
         "lecture",
       ),
-    ).toEqual({ content: "lecture", created_at: "2026-01-01", duration: 2100 });
+    ).toEqual({ content: "lecture", created_at: dateInputToTimestamp("2026-01-01"), duration: 2100 });
   });
   it("treats a single episode number as that episode only", () => {
     expect(episodeRange("4")).toEqual({ start: 4, end: 4 });
@@ -50,7 +59,7 @@ describe("session entry", () => {
   it("calculates inclusive ranges with hyphens or en dashes", () => {
     expect(sessionPayload(entry, "existing")).toEqual({
       content: "existing",
-      created_at: "2026-01-01",
+      created_at: dateInputToTimestamp("2026-01-01"),
       duration: 5760,
       progress: { unit: "episode", start: 61, end: 64 },
     });
@@ -75,7 +84,7 @@ describe("session entry", () => {
     };
     expect(sessionPayload(reading, "novel")).toEqual({
       content: "novel",
-      created_at: "2026-01-01",
+      created_at: dateInputToTimestamp("2026-01-01"),
       duration: 4500,
     });
     expect(
@@ -91,6 +100,7 @@ describe("session entry", () => {
     { pageStart: "8", pageEnd: "4" },
     { url: "javascript:alert(1)" },
     { date: "2026-02-30" },
+    { time: "25:00" },
     { date: "2999-01-01" },
     { title: " " },
   ])("rejects invalid reading entries %j", (changes) => {

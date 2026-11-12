@@ -8,7 +8,6 @@
 import type { UpdateSessionProgressDto } from './updateSessionProgressDto';
 
 export interface UpdateImmersionSessionDto {
-  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   created_at?: string;
   /** @minimum 1 */
   duration?: number;

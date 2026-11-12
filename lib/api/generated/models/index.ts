@@ -25,6 +25,7 @@ export * from './dashboardBucketResponseDto';
 export * from './dashboardStatisticsParams';
 export * from './dashboardStatisticsRange';
 export * from './dashboardStatisticsResponseDto';
+export * from './faroCollectResponseDto';
 export * from './immersionSessionHistoryParams';
 export * from './immersionSessionHistoryTypeItem';
 export * from './immersionSessionResponseDto';

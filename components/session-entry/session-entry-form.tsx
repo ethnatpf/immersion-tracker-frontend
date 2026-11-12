@@ -26,6 +26,8 @@ import {
   useUserPreferences,
 } from "@/lib/api/generated/immersion";
 import { formatDuration } from "@/lib/duration";
+import { getLocalDateInputValue, getLocalTimeInputValue } from "@/lib/date";
+import { useUserTimeZone } from "@/lib/use-user-time-zone";
 import { DEFAULT_EPISODE_MINUTES } from "@/lib/constants";
 import { isServerError } from "@/lib/query-options";
 import {
@@ -75,13 +77,36 @@ function Section({
 }
 
 export function SessionEntryForm() {
+  const timeZone = useUserTimeZone();
+
+  return (
+    timeZone ? (
+      <SessionEntryFormContent />
+    ) : (
+      <div
+        role="status"
+        aria-label="Preparing session form"
+        className="space-y-6"
+      >
+        <Skeleton className="h-36 rounded-2xl" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-72 rounded-2xl" />
+          <Skeleton className="h-72 rounded-2xl" />
+        </div>
+      </div>
+    )
+  );
+}
+
+function SessionEntryFormContent() {
   // Keep the draft outside the mutation boundary so server-error recovery cannot repeat a write or lose a confirmed content ID.
   const [entry, setEntry] = useState<SessionEntry>(() => ({
     type: "anime",
     language: "",
     title: "",
     url: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: getLocalDateInputValue(),
+    time: getLocalTimeInputValue(),
     episodes: "",
     episodeMinutes: String(DEFAULT_EPISODE_MINUTES.anime),
     hours: "0",
@@ -465,35 +490,68 @@ function SessionFormBody({
                     type: "url",
                     placeholder: "https://",
                   })}
-                <div>
-                  <label
-                    htmlFor="date"
-                    className="mb-2 block text-xs text-muted-foreground"
-                  >
-                    Log date
-                  </label>
-                  <DatePicker
-                    id="date"
-                    ariaLabel="Log date"
-                    value={entry.date}
-                    onChange={(date) => update("date", date)}
-                    max={new Date().toISOString().slice(0, 10)}
-                    disabled={busy}
-                    invalid={!!errors.date}
-                    describedBy={errors.date ? "date-error" : undefined}
-                  />
-                  {errors.date && (
-                    <p
-                      id="date-error"
-                      role="alert"
-                      className="mt-2 text-xs text-destructive"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="date"
+                      className="mb-2 block text-xs text-muted-foreground"
                     >
-                      {errors.date}
+                      Log date
+                    </label>
+                    <DatePicker
+                      id="date"
+                      ariaLabel="Log date"
+                      value={entry.date}
+                      onChange={(date) => update("date", date)}
+                      max={getLocalDateInputValue()}
+                      disabled={busy}
+                      invalid={!!errors.date}
+                      describedBy={errors.date ? "date-error" : undefined}
+                    />
+                    {errors.date && (
+                      <p
+                        id="date-error"
+                        role="alert"
+                        className="mt-2 text-xs text-destructive"
+                      >
+                        {errors.date}
+                      </p>
+                    )}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Calendar date in your timezone.
                     </p>
-                  )}
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Calendar date in UTC.
-                  </p>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="time"
+                      className="mb-2 block text-xs text-muted-foreground"
+                    >
+                      Log time
+                    </label>
+                    <Input
+                      id="time"
+                      type="time"
+                      step="1"
+                      className="h-12 bg-[#f9fbfa]"
+                      value={entry.time}
+                      onChange={(event) => update("time", event.target.value)}
+                      disabled={busy}
+                      aria-invalid={!!errors.time}
+                      aria-describedby={errors.time ? "time-error" : undefined}
+                    />
+                    {errors.time && (
+                      <p
+                        id="time-error"
+                        role="alert"
+                        className="mt-2 text-xs text-destructive"
+                      >
+                        {errors.time}
+                      </p>
+                    )}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Time in your timezone.
+                    </p>
+                  </div>
                 </div>
               </div>
             </Section>

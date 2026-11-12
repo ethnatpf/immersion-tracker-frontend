@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
@@ -27,7 +27,7 @@ import type {
   SessionHistoryItemResponseDto,
 } from "@/lib/api/generated/models";
 import { formatDuration } from "@/lib/duration";
-import { formatUtcDate } from "@/lib/date";
+import { LocalizedDate } from "@/components/localized-date";
 import { sessionMediaStyles } from "@/components/session-media";
 import { SessionActions } from "@/components/session-actions";
 import { SessionDialog } from "@/components/session-dialog";
@@ -106,7 +106,7 @@ function SummaryMetric({
   icon: Icon,
 }: {
   title: string;
-  value: string;
+  value: ReactNode;
   detail: string;
   icon: typeof Clock3;
 }) {
@@ -140,7 +140,7 @@ function DesktopSessions({
         <TableHeader className="bg-[#f8faf9] text-xs text-muted-foreground">
           <TableRow className="border-0 hover:bg-transparent">
             <TableHead className="w-[22%] px-5 py-3 font-normal">
-              Date
+              Date &amp; time
             </TableHead>
             <TableHead className="px-3 py-3 font-normal">
               Session / progress
@@ -157,9 +157,7 @@ function DesktopSessions({
           {sessions.map((session) => (
             <TableRow key={session.id} className="h-[68px] border-border">
               <TableCell className="px-5 text-xs text-muted-foreground">
-                <time dateTime={session.created_at}>
-                  {formatUtcDate(session.created_at)}
-                </time>
+                <LocalizedDate date={session.created_at} />
               </TableCell>
               <TableCell className="px-3">
                 <div className="flex items-center gap-3">
@@ -209,12 +207,10 @@ function MobileSessions({
         <li key={session.id} className="py-4 first:pt-0 last:pb-0">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <time
-                dateTime={session.created_at}
+              <LocalizedDate
+                date={session.created_at}
                 className="text-xs text-muted-foreground"
-              >
-                {formatUtcDate(session.created_at)}
-              </time>
+              />
               <p className="mt-2 text-sm font-medium">
                 {progressLabel(session)}
               </p>
@@ -434,7 +430,7 @@ export function ContentDetail({ contentId }: { contentId: string }) {
               ? "Last read"
               : "Last session"
           }
-          value={lastSession ? formatUtcDate(lastSession.created_at) : "—"}
+          value={lastSession ? <LocalizedDate date={lastSession.created_at} /> : "—"}
           detail={lastDetail}
           icon={CalendarDays}
         />

@@ -20,6 +20,16 @@ import type {
 import { sessionMediaStyles, SessionTypeIcon } from "@/components/session-media";
 import { episodeDurationSeconds, episodeRange } from "@/lib/session-entry";
 import { DEFAULT_EPISODE_MINUTES } from "@/lib/constants";
+import {
+  dateTimeInputToTimestamp,
+  getLocalDateInputValue,
+  isLocalDateTimeInPastOrPresent,
+  isValidLocalDateInput,
+  isValidLocalDateTimeInput,
+  isValidLocalTimeInput,
+  timestampToDateInput,
+  timestampToTimeInput,
+} from "@/lib/date";
 
 export type SessionDialogSubmission = {
   created_at: string;
@@ -38,13 +48,27 @@ export type SessionDialogSession = {
 const sessionSchema = z
   .object({
     date: z.string().refine(
-      (value) =>
-        /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-        !Number.isNaN(Date.parse(value)) &&
-        new Date(value).toISOString().slice(0, 10) === value &&
-        value <= new Date().toISOString().slice(0, 10),
-      "Choose a valid date no later than today (UTC).",
+      (value) => isValidLocalDateInput(value),
+      "Choose a valid date no later than today.",
     ),
+    time: z.string().refine(isValidLocalTimeInput, "Choose a valid time."),
+  })
+  .superRefine(({ date, time }, context) => {
+    if (isValidLocalDateInput(date) && isValidLocalTimeInput(time)) {
+      if (!isValidLocalDateTimeInput(date, time)) {
+        context.addIssue({
+          code: "custom",
+          path: ["time"],
+          message: "This local time does not exist on the selected date.",
+        });
+      } else if (!isLocalDateTimeInPastOrPresent(date, time)) {
+        context.addIssue({
+          code: "custom",
+          path: ["time"],
+          message: "Choose a time that is not in the future.",
+        });
+      }
+    }
   });
 
 const durationSchema = z
@@ -164,7 +188,8 @@ function initialValues(session: SessionDialogSession): SessionValues {
   const minutes = Math.floor((session.duration % 3600) / 60);
   const seconds = session.duration % 60;
   return {
-    date: session.created_at.slice(0, 10),
+    date: timestampToDateInput(session.created_at),
+    time: timestampToTimeInput(session.created_at),
     hours: String(hours),
     minutes: String(minutes),
     seconds: String(seconds),
@@ -282,7 +307,7 @@ export function SessionDialog({
       Number(values.minutes) * 60 +
       Number(values.seconds);
     const data: SessionDialogSubmission = {
-      created_at: result.data.date,
+      created_at: dateTimeInputToTimestamp(result.data.date, result.data.time),
       duration,
     };
     if (
@@ -372,37 +397,69 @@ export function SessionDialog({
               aria-busy={saving}
             >
               <legend className="sr-only">Session details</legend>
-              <div
-                className={`space-y-2 ${supportsEpisodes ? "sm:col-span-1" : "sm:col-span-2"}`}
-              >
-                <label
-                  className="block text-xs text-muted-foreground"
-                  htmlFor={`session-dialog-date-${id}`}
-                >
-                  Date (UTC)
-                </label>
-                <DatePicker
-                  id={`session-dialog-date-${id}`}
-                  ariaLabel="Choose session date"
-                  value={values.date}
-                  max={new Date().toISOString().slice(0, 10)}
-                  onChange={(value) => change("date", value)}
-                  invalid={!!errors.date}
-                  describedBy={
-                    errors.date
-                      ? `session-dialog-date-error-${id}`
-                      : undefined
-                  }
-                />
-                {errors.date && (
-                  <p
-                    id={`session-dialog-date-error-${id}`}
-                    role="alert"
-                    className="text-xs text-destructive"
+              <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    className="block text-xs text-muted-foreground"
+                    htmlFor={`session-dialog-date-${id}`}
                   >
-                    {errors.date}
-                  </p>
-                )}
+                    Date
+                  </label>
+                  <DatePicker
+                    id={`session-dialog-date-${id}`}
+                    ariaLabel="Choose session date"
+                    value={values.date}
+                    max={getLocalDateInputValue()}
+                    onChange={(value) => change("date", value)}
+                    invalid={!!errors.date}
+                    describedBy={
+                      errors.date
+                        ? `session-dialog-date-error-${id}`
+                        : undefined
+                    }
+                  />
+                  {errors.date && (
+                    <p
+                      id={`session-dialog-date-error-${id}`}
+                      role="alert"
+                      className="text-xs text-destructive"
+                    >
+                      {errors.date}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label
+                    className="block text-xs text-muted-foreground"
+                    htmlFor={`session-dialog-time-${id}`}
+                  >
+                    Time
+                  </label>
+                  <Input
+                    id={`session-dialog-time-${id}`}
+                    aria-label="Choose session time"
+                    type="time"
+                    step="1"
+                    value={values.time}
+                    onChange={(event) => change("time", event.target.value)}
+                    aria-invalid={!!errors.time}
+                    aria-describedby={
+                      errors.time
+                        ? `session-dialog-time-error-${id}`
+                        : undefined
+                    }
+                    className="h-12 rounded-[10px] bg-[#f9fbfa]"
+                  />
+                  {errors.time && (
+                    <p
+                      id={`session-dialog-time-error-${id}`}
+                      role="alert"
+                      className="text-xs text-destructive"
+                    >
+                      {errors.time}
+                    </p>
+                  )}
+                </div>
               </div>
               {supportsEpisodes ? (
                 <div

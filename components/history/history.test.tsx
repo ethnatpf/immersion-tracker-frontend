@@ -3,6 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { History } from "./history";
+import { dateInputToTimestamp, dateTimeInputToTimestamp } from "@/lib/date";
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { getImmersionSessionHistoryMockHandler } from "@/lib/api/generated/immersion.msw";
@@ -17,7 +18,7 @@ const sessions: SessionHistoryItemResponseDto[] = [
     content_id: "content-one",
     title: "A Japanese novel",
     type: "book",
-    created_at: "2026-10-20T00:00:00.000Z",
+    created_at: dateInputToTimestamp("2026-10-20"),
     duration: 6300,
   },
   {
@@ -25,7 +26,7 @@ const sessions: SessionHistoryItemResponseDto[] = [
     content_id: "content-two",
     title: "An anime episode",
     type: "anime",
-    created_at: "2026-10-19T00:00:00.000Z",
+    created_at: dateInputToTimestamp("2026-10-19"),
     duration: 1500,
   },
 ];
@@ -40,7 +41,7 @@ describe("History", () => {
     const history = await screen.findByRole("table", { name: "Immersion history" });
     const sessionLink = within(history).getByRole("link", { name: "A Japanese novel" });
     expect(sessionLink).toHaveAttribute("href", "/content/content-one");
-    await user.click(within(history).getByRole("cell", { name: "Oct 20, 2026" }));
+    await user.click(within(history).getByRole("cell", { name: /Oct 20, 2026/ }));
 
     expect(router.push).toHaveBeenCalledWith("/content/content-one");
   });
@@ -350,8 +351,63 @@ describe("History", () => {
     expect(await within(table).findByText("02:00:00")).toBeVisible();
     expect(updateBody).toMatchObject({
       duration: 7200,
-      created_at: "2026-10-20",
+      created_at: dateInputToTimestamp("2026-10-20"),
     });
+  });
+
+  it("rejects an edit with a future local time without sending an update", async () => {
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-03-10T16:00:00Z"));
+    const user = userEvent.setup();
+    let updateCount = 0;
+
+    try {
+      server.use(
+        getImmersionSessionHistoryMockHandler({
+          items: [
+            {
+              ...sessions[0],
+              created_at: dateTimeInputToTimestamp("2026-03-10", "11:00"),
+            },
+          ],
+          total: 1,
+          page: 1,
+          limit: 4,
+        }),
+        http.patch("*/immersion-session/:id", () => {
+          updateCount += 1;
+          return HttpResponse.json({ _id: "one" });
+        }),
+      );
+      renderWithQuery(<History />);
+
+      const table = await screen.findByRole("table", {
+        name: "Immersion history",
+      });
+      await user.click(
+        within(table).getByRole("button", { name: "Edit A Japanese novel" }),
+      );
+      const dialog = await screen.findByRole("dialog", { name: "Edit session" });
+      const timeInput = within(dialog).getByLabelText("Choose session time");
+      await user.clear(timeInput);
+      await user.type(timeInput, "13:00");
+      await user.click(
+        within(dialog).getByRole("button", { name: "Save changes" }),
+      );
+
+      expect(
+        await within(dialog).findByText(
+          "Choose a time that is not in the future.",
+        ),
+      ).toBeVisible();
+      expect(updateCount).toBe(0);
+    } finally {
+      if (previousTimeZone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimeZone;
+      vi.useRealTimers();
+    }
   });
 
   it.each([
@@ -397,7 +453,7 @@ describe("History", () => {
 
       await waitFor(() => expect(updateBody).toBeDefined());
       expect(updateBody).toMatchObject({
-        created_at: "2026-10-19",
+        created_at: dateInputToTimestamp("2026-10-19"),
         duration,
       });
       expect(updateBody).not.toHaveProperty("progress");

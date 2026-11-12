@@ -9,7 +9,7 @@ import type {
   ImmersionSessionHistoryTypeItem,
   SessionHistoryItemResponseDto,
 } from "@/lib/api/generated/models";
-import { formatUtcDate } from "@/lib/date";
+import { LocalizedDate } from "@/components/localized-date";
 import { formatDuration } from "@/lib/duration";
 import { sessionMediaStyles } from "@/components/session-media";
 import { SessionActions } from "@/components/session-actions";
@@ -70,7 +70,7 @@ function SessionBadge({ session }: { session: Session }) {
 }
 
 function SessionDate({ date }: { date: string }) {
-  return <time dateTime={date}>{formatUtcDate(date)}</time>;
+  return <LocalizedDate date={date} />;
 }
 
 function DesktopRows({
@@ -90,7 +90,7 @@ function DesktopRows({
             Content title
           </TableHead>
           <TableHead className="w-[15%] px-3 py-5 font-normal">Type</TableHead>
-          <TableHead className="w-[17%] px-3 py-5 font-normal">Date</TableHead>
+          <TableHead className="w-[17%] px-3 py-5 font-normal">Date &amp; time</TableHead>
           <TableHead className="w-[12%] px-3 py-5 text-right font-normal">
             Duration
           </TableHead>

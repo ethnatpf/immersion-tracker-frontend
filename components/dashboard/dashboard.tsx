@@ -17,6 +17,7 @@ import {
   useLanguageList,
   useUserPreferences,
 } from "@/lib/api/generated/immersion";
+import { useUserTimeZone } from "@/lib/use-user-time-zone";
 import type {
   DashboardStatisticsRange,
   DashboardStatisticsResponseDto,
@@ -160,6 +161,7 @@ function StatisticsLoading() {
 export function Dashboard() {
   const [range, setRange] = useState<DashboardStatisticsRange>("week");
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const timeZone = useUserTimeZone();
   const languages = useLanguageList({
     query: { retry: false, staleTime: 5 * 60 * 1000 },
   });
@@ -181,8 +183,8 @@ export function Dashboard() {
   );
   const ready = languages.isSuccess && preferences.isSuccess;
   const statistics = useDashboardStatistics(
-    { language: languageId ?? "", range },
-    { query: { enabled: ready && !!languageId, retry: false } },
+    { language: languageId ?? "", range, timezone: timeZone ?? "" },
+    { query: { enabled: ready && !!languageId && !!timeZone, retry: false } },
   );
   const configError = languages.error ?? preferences.error;
   const unavailable = () =>

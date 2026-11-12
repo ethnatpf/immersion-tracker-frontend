@@ -5,7 +5,14 @@ loadEnvConfig(process.cwd());
 
 export default defineConfig({
   immersion: {
-    input: process.env.OPENAPI_URL ?? "http://localhost:4000/api-json",
+    input: {
+      target: process.env.OPENAPI_URL ?? "http://localhost:4000/api-json",
+      filters: {
+        mode: "exclude",
+        tags: [/health/i],
+        schemas: [/^HealthControllerCheck/],
+      },
+    },
     output: {
       target: "./lib/api/generated/immersion.ts",
       schemas: "./lib/api/generated/models",
