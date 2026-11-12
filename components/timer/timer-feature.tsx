@@ -10,7 +10,7 @@ import {
   type Ref,
   type ReactNode,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Play, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -35,9 +35,9 @@ import {
   getDashboardStatisticsQueryKey,
   getImmersionSessionHistoryQueryKey,
   getTimerCurrentQueryKey,
+  timerCurrent,
   useContentCreate,
   useLanguageList,
-  useTimerCurrent,
   useTimerStart,
   useTimerStop,
   useUserPreferences,
@@ -207,7 +207,11 @@ export function TimerFeature({
   onReducedChange: (reduced: boolean) => void;
 }) {
   const client = useQueryClient();
-  const current = useTimerCurrent({ query: { retry: false } });
+  const current = useQuery({
+    queryKey: getTimerCurrentQueryKey(),
+    queryFn: async ({ signal }) => (await timerCurrent({ signal })) ?? null,
+    retry: false,
+  });
   const languages = useLanguageList({ query: { enabled: false } });
   const preferences = useUserPreferences({
     query: { enabled: false, retry: false, staleTime: 5 * 60 * 1000 },
@@ -243,8 +247,7 @@ export function TimerFeature({
     !current.isError && current.data && typeof current.data === "object"
       ? current.data
       : null;
-  const noTimer =
-    current.error instanceof ApiError && current.error.status === 404;
+  const noTimer = current.isSuccess && !current.data;
   const currentError = current.isError && !noTimer;
   const language = languageId;
   const needsLanguage = !presetContent;
@@ -275,11 +278,7 @@ export function TimerFeature({
       toast.warning("Stop the existing timer first.");
       return;
     }
-    if (
-      latest.error &&
-      !(latest.error instanceof ApiError && latest.error.status === 404)
-    )
-      return;
+    if (latest.error) return;
     if (content) {
       setType(content.type);
       setTitle(content.title);
