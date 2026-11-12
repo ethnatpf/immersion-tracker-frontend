@@ -13,6 +13,7 @@ import type {
   ContentDetailsResponseDto,
   SessionHistoryItemResponseDto,
 } from "@/lib/api/generated/models";
+import { formatUserDateTime } from "@/lib/date";
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { ContentDetail } from "./content-detail";
@@ -144,7 +145,7 @@ describe("ContentDetail", () => {
           content_id: body.content,
           title: details.title,
           type: details.type,
-          created_at: `${body.created_at}T00:00:00.000Z`,
+          created_at: body.created_at,
           duration: body.duration,
           progress: body.progress,
         };
@@ -172,7 +173,14 @@ describe("ContentDetail", () => {
     );
     expect(createBody).not.toHaveProperty("progress");
     expect(screen.queryByRole("dialog", { name: "Log new session" })).not.toBeInTheDocument();
-    expect(await screen.findByText("13:00:00")).toBeVisible();
+    expect(
+      await screen.findAllByText(
+        formatUserDateTime(
+          createdSession!.created_at,
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ),
+      ),
+    ).not.toHaveLength(0);
     expect(
       await within(
         await screen.findByRole("table", {
