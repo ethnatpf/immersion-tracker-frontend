@@ -647,6 +647,7 @@ describe("session entry form", () => {
         current_streak: 0,
         reading_time: 0,
         audiovisual_time: writes.length ? 5760 : 0,
+        audio_time: 0,
         average_time: 0,
         breakdown: [],
       })),

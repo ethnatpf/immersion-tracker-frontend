@@ -219,7 +219,7 @@ describe("History", () => {
         const url = new URL(request.url);
         requests.push(url);
         const types = url.searchParams.getAll("type");
-        const reading = types.includes("book");
+        const reading = types.length === 0 || types.includes("book");
         return {
           items: [reading ? sessions[0] : sessions[1]],
           total: reading ? 2 : 3,
@@ -256,8 +256,8 @@ describe("History", () => {
       ).findByText("A Japanese novel"),
     ).toBeVisible();
     expect(requests.at(-1)?.searchParams.getAll("type")).toEqual([
-      "book",
       "manga",
+      "book",
     ]);
     expect(screen.getAllByText("Showing 1–2 of 2 entries")[0]).toBeVisible();
   });

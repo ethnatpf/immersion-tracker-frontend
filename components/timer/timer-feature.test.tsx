@@ -267,6 +267,9 @@ describe("timer feature", () => {
       within(dialog).queryByRole("combobox", { name: "Language" }),
     ).not.toBeInTheDocument();
 
+    await user.click(
+      within(dialog).getByRole("button", { name: /Audiovisual/ }),
+    );
     await user.click(within(dialog).getByRole("button", { name: "Anime" }));
     const language = await within(dialog).findByRole("combobox", {
       name: "Language",

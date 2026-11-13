@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { SessionDialog } from "@/components/session-dialog";
@@ -97,8 +97,9 @@ describe("session dialog", () => {
     expect(screen.getByRole("spinbutton", { name: "Hours" })).toHaveValue(1);
     expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(45);
     expect(screen.queryByRole("spinbutton", { name: "Seconds" })).not.toBeInTheDocument();
-    await user.clear(screen.getByRole("spinbutton", { name: "Minutes" }));
-    await user.type(screen.getByRole("spinbutton", { name: "Minutes" }), "46");
+    const minutes = screen.getByRole("spinbutton", { name: "Minutes" });
+    fireEvent.change(minutes, { target: { value: "46" } });
+    expect(minutes).toHaveValue(46);
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() =>
@@ -132,8 +133,7 @@ describe("session dialog", () => {
     const episodeDuration = screen.getByRole("spinbutton", {
       name: "Episode duration",
     });
-    await user.clear(episodeDuration);
-    await user.type(episodeDuration, "30");
+    fireEvent.change(episodeDuration, { target: { value: "30" } });
     await user.click(
       screen.getByRole("button", { name: "Enter time manually" }),
     );
@@ -206,8 +206,9 @@ describe("session dialog", () => {
       />,
     );
 
-    await user.clear(screen.getByRole("spinbutton", { name: "Page from" }));
-    await user.type(screen.getByRole("spinbutton", { name: "Page from" }), "21");
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Page from" }), {
+      target: { value: "21" },
+    });
     await user.click(screen.getByRole("combobox", { name: "Progress unit" }));
     await user.click(await screen.findByRole("option", { name: "Chapters" }));
     await user.click(screen.getByRole("button", { name: "Save changes" }));

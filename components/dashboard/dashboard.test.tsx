@@ -33,8 +33,8 @@ const languages: LanguageResponseDto[] = [
   { id: "es", code: "es", name: "Spanish", nativeName: "Español" },
 ];
 const stats: DashboardStatisticsResponseDto = {
-  total_immersion_time: 1736100, current_streak: 42, reading_time: 3600, audiovisual_time: 1732500, average_time: 7200,
-  breakdown: [{ start_date: "2026-10-19", reading_time: 1800, audiovisual_time: 7200 }, { start_date: "2026-10-20", reading_time: 1800, audiovisual_time: 3600 }],
+  total_immersion_time: 1739700, current_streak: 42, reading_time: 3600, audiovisual_time: 1732500, audio_time: 3600, average_time: 7200,
+  breakdown: [{ start_date: "2026-10-19", reading_time: 1800, audiovisual_time: 7200, audio_time: 1800 }, { start_date: "2026-10-20", reading_time: 1800, audiovisual_time: 3600, audio_time: 1800 }],
 };
 const history: SessionHistoryResponseDto = {
   items: [{ id: "session-1", content_id: "book-1", type: "book", title: "A Japanese novel", duration: 6300, created_at: "2026-10-24T01:00:00Z" }],
@@ -65,9 +65,10 @@ describe("dashboard", () => {
   it("loads the preferred language and binds metrics, charts, and recent sessions to the SDK responses", async () => {
     renderWithQuery(<Dashboard />);
     const total = await screen.findByRole("region", { name: "Total immersion" });
-    expect(within(total).getByText("482:15:00")).toBeVisible();
+    expect(within(total).getByText("483:15:00")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "Current streak" })).getByText("42")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "Reading time" })).getByText("1.0h")).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Audio time" })).getByText("1.0h")).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Dashboard language" })).toHaveTextContent("Spanish");
     expect(statisticsRequests[0].searchParams.get("language")).toBe("es");
     expect(statisticsRequests[0].searchParams.get("range")).toBe("week");
@@ -198,7 +199,7 @@ describe("dashboard", () => {
   });
 
   it("shows empty statistics and sessions without inventing data", async () => {
-    server.use(getDashboardStatisticsMockHandler({ total_immersion_time: 0, reading_time: 0, audiovisual_time: 0, average_time: 0, current_streak: 0, breakdown: [] }), getImmersionSessionHistoryMockHandler({ items: [], total: 0, page: 1, limit: 5 }));
+    server.use(getDashboardStatisticsMockHandler({ total_immersion_time: 0, reading_time: 0, audiovisual_time: 0, audio_time: 0, average_time: 0, current_streak: 0, breakdown: [] }), getImmersionSessionHistoryMockHandler({ items: [], total: 0, page: 1, limit: 5 }));
     renderWithQuery(<Dashboard />);
     expect(await screen.findByText("No reading immersion in this period.")).toBeVisible();
     expect(screen.getByText("No audiovisual immersion in this period.")).toBeVisible();
@@ -523,7 +524,7 @@ describe("dashboard", () => {
     server.use(getLanguageListMockHandler(languages), getUserPreferencesMockHandler({ preferred_language: "es" }), getDashboardStatisticsMockHandler(stats), getImmersionSessionHistoryMockHandler(history));
     await user.click(screen.getByRole("button", { name: "Try again" }));
     const total = await screen.findByRole("region", { name: "Total immersion" });
-    expect(within(total).getByText("482:15:00")).toBeVisible();
+    expect(within(total).getByText("483:15:00")).toBeVisible();
     expect(await screen.findByRole("table", { name: "Recent immersion sessions" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Something went wrong" })).not.toBeInTheDocument();
   });
