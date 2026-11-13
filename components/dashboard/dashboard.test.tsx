@@ -2,6 +2,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+const redirect = vi.hoisted(() => ({ toSignIn: vi.fn() }));
+vi.mock("@/lib/auth-redirect", () => ({ redirectToSignIn: redirect.toSignIn }));
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { Toaster } from "@/components/shadcn/sonner";
@@ -259,6 +261,18 @@ describe("dashboard", () => {
     const error = await screen.findByRole("alert");
     expect(within(error).getByRole("link", { name: "Sign in again" })).toHaveAttribute("href", "/auth/login?returnTo=%2F");
     expect(statisticsRequests).toHaveLength(0);
+  });
+
+  it("offers retry when Auth0 cannot currently verify the session", async () => {
+    server.use(http.get("*/user/preferences", () => HttpResponse.json({
+      code: "auth_unavailable",
+      message: "Could not verify your session. Please try again.",
+    }, { status: 401 })));
+    renderWithQuery(<Dashboard />);
+    const error = await screen.findByRole("alert");
+    expect(error).toHaveTextContent("Could not verify your session. Please try again.");
+    expect(within(error).getByRole("button", { name: "Try again" })).toBeVisible();
+    expect(within(error).queryByRole("link", { name: "Sign in again" })).not.toBeInTheDocument();
   });
 
   it("does not ask signed-in users to log in again when the backend rejects their token", async () => {

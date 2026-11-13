@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  AccessTokenError,
+  MfaRequiredError,
+  OAuth2Error,
+} from "@auth0/nextjs-auth0/errors";
 
 const { getAccessToken } = vi.hoisted(() => ({ getAccessToken: vi.fn() }));
 vi.mock("@/lib/auth0", () => ({ auth0: { getAccessToken } }));
@@ -50,6 +55,61 @@ describe("authenticated API proxy", () => {
     expect(upstream.mock.calls[1][0].toString()).toBe("http://backend.test:4000/timer/start");
     expect(JSON.parse(upstream.mock.calls[1][1].body)).toEqual({ content: "content-one" });
     expect(upstream.mock.calls[2][0].toString()).toBe("http://backend.test:4000/timer/stop");
+  });
+
+  it.each([
+    new AccessTokenError("missing_session", "missing session with sensitive details"),
+    new AccessTokenError("missing_refresh_token", "no refresh token"),
+    new AccessTokenError("session_expired", "session expired"),
+    new AccessTokenError(
+      "failed_to_refresh_token",
+      "refresh failed",
+      new OAuth2Error({ code: "invalid_grant" }),
+    ),
+    new MfaRequiredError("MFA is required", "encrypted-mfa-token"),
+  ])("asks the browser to sign in when the session cannot be renewed", async (error) => {
+    getAccessToken.mockRejectedValue(error);
+    const response = await GET(
+      new Request("http://frontend.test/api/backend/language"),
+      context("language"),
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      code: "session_expired",
+      message: "Please sign in again.",
+    });
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
+  it("keeps temporary Auth0 token failures recoverable", async () => {
+    getAccessToken.mockRejectedValue(
+      new AccessTokenError(
+        "failed_to_refresh_token",
+        "refresh failed",
+        new OAuth2Error({ code: "temporarily_unavailable" }),
+      ),
+    );
+    const response = await GET(
+      new Request("http://frontend.test/api/backend/language"),
+      context("language"),
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      code: "auth_unavailable",
+      message: "Could not verify your session. Please try again.",
+    });
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
+  it("keeps unexpected token retrieval errors recoverable", async () => {
+    getAccessToken.mockRejectedValue(new Error("sensitive internal detail"));
+    const response = await GET(
+      new Request("http://frontend.test/api/backend/language"),
+      context("language"),
+    );
+    expect(response.status).toBe(401);
+    expect(await response.text()).not.toContain("sensitive internal detail");
+    expect(upstream).not.toHaveBeenCalled();
   });
   it("forwards content searches", async () => {
     const response = await GET(
@@ -215,22 +275,6 @@ describe("authenticated API proxy", () => {
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
     expect(await response.json()).toEqual({ result: "private data" });
     expect(response.headers.get("Authorization")).toBeNull();
-  });
-
-  it("rejects expired or missing sessions before contacting the API", async () => {
-    getAccessToken.mockRejectedValue(
-      new Error("missing session with sensitive details"),
-    );
-    const response = await GET(
-      new Request("http://frontend.test/api/backend/language"),
-      context("language"),
-    );
-    expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({
-      code: "session_expired",
-      message: "Please sign in again.",
-    });
-    expect(upstream).not.toHaveBeenCalled();
   });
 
   it("distinguishes a backend rejection from an expired frontend session", async () => {

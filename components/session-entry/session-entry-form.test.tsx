@@ -2,6 +2,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+const { redirectToSignIn } = vi.hoisted(() => ({ redirectToSignIn: vi.fn() }));
+vi.mock("@/lib/auth-redirect", () => ({ redirectToSignIn }));
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { toast } from "sonner";
@@ -55,6 +57,7 @@ afterEach(() => {
 
 beforeEach(() => {
   push.mockReset();
+  redirectToSignIn.mockReset();
   searches = [];
   writes = [];
   creates = [];
@@ -108,12 +111,30 @@ async function selectExisting() {
 }
 
 describe("session entry form", () => {
-  it.each(["session_expired", "api_unauthorized"])(
-    "presents a mutation authorization failure in a toast: %s",
-    async (code) => {
+  it.each([
+    {
+      code: "api_unauthorized",
+      message: "The server could not authorize this request. Please try again.",
+    },
+    {
+      code: "auth_unavailable",
+      message: "Could not verify your session. Please try again.",
+    },
+  ])(
+    "presents a recoverable mutation authorization failure in a toast: $code",
+    async ({ code, message }) => {
       server.use(
         http.post("*/api/backend/immersion-session", () =>
-          HttpResponse.json({ code, message: "Unauthorized" }, { status: 401 }),
+          HttpResponse.json(
+            {
+              code,
+              message:
+                code === "auth_unavailable"
+                  ? "Could not verify your session. Please try again."
+                  : "Unauthorized",
+            },
+            { status: 401 },
+          ),
         ),
       );
       renderWithQuery(
@@ -129,24 +150,42 @@ describe("session entry form", () => {
       });
       expect(
         await within(notifications).findByText(
-          code === "session_expired"
-            ? "Your session needs to be renewed. Please sign in again."
-            : "The server could not authorize this request. Please try again.",
+          message,
         ),
       ).toBeVisible();
-      if (code === "session_expired")
-        expect(
-          within(notifications).getByRole("button", { name: "Sign in again" }),
-        ).toBeVisible();
-      else
-        expect(
-          within(notifications).queryByRole("button", {
-            name: "Sign in again",
-          }),
-        ).not.toBeInTheDocument();
+      expect(
+        within(notifications).queryByRole("button", {
+          name: "Sign in again",
+        }),
+      ).not.toBeInTheDocument();
       expect(screen.getByLabelText("Episodes watched")).toHaveValue("61–64");
     },
   );
+
+  it("automatically redirects after an unrecoverable mutation session error", async () => {
+    server.use(
+      http.post("*/api/backend/immersion-session", () =>
+        HttpResponse.json(
+          { code: "session_expired", message: "Please sign in again." },
+          { status: 401 },
+        ),
+      ),
+    );
+    renderWithQuery(
+      <>
+        <SessionEntryForm />
+        <Toaster />
+      </>,
+    );
+    const user = await selectExisting();
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+
+    await waitFor(() => expect(redirectToSignIn).toHaveBeenCalledOnce());
+    expect(screen.getByLabelText("Episodes watched")).toHaveValue("61–64");
+    expect(
+      screen.queryByText("Your session needs to be renewed. Please sign in again."),
+    ).not.toBeInTheDocument();
+  });
   it.each([
     { message: "url must be a URL address" },
     { message: ["url must be a URL address", "title is already in use"] },

@@ -30,8 +30,10 @@ export function showMutationError(error: unknown) {
     .map((item) => item.trim())
     .filter(Boolean);
   const needsLogin = apiError?.status === 401 && code === "session_expired";
-  const title = needsLogin
-    ? "Your session needs to be renewed. Please sign in again."
+  if (needsLogin) return;
+  const authUnavailable = apiError?.status === 401 && code === "auth_unavailable";
+  const title = authUnavailable && messages.length
+    ? messages[0]
     : apiError?.status === 401
       ? "The server could not authorize this request. Please try again."
       : messages.length === 1
@@ -50,19 +52,5 @@ export function showMutationError(error: unknown) {
         {apiError?.requestId && <RequestId requestId={apiError.requestId} />}
       </>
     ),
-    ...(needsLogin
-      ? {
-          action: {
-            label: "Sign in again",
-            onClick: () => {
-              const returnTo =
-                window.location.pathname + window.location.search;
-              const loginUrl = new URL("/auth/login", window.location.origin);
-              loginUrl.searchParams.set("returnTo", returnTo);
-              window.location.assign(loginUrl);
-            },
-          },
-        }
-      : {}),
   });
 }
