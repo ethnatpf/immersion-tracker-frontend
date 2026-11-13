@@ -12,4 +12,5 @@ export type SessionProgressResponseDtoUnit = typeof SessionProgressResponseDtoUn
 export const SessionProgressResponseDtoUnit = {
   episode: 'episode',
   page: 'page',
+  chapter: 'chapter',
 } as const;

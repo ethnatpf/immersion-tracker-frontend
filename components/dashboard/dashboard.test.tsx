@@ -7,10 +7,9 @@ vi.mock("@/lib/auth-redirect", () => ({ redirectToSignIn: redirect.toSignIn }));
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { Toaster } from "@/components/shadcn/sonner";
-import { SessionDialog } from "@/components/session-dialog";
 import { getDashboardStatisticsMockHandler, getImmersionSessionHistoryMockHandler, getLanguageListMockHandler, getUserPreferencesMockHandler } from "@/lib/api/generated/immersion.msw";
 import type { DashboardStatisticsResponseDto, LanguageResponseDto, SessionHistoryResponseDto } from "@/lib/api/generated/models";
-import { dateInputToTimestamp, dateTimeInputToTimestamp, formatUserDateTime, getUserTimeZone, timestampToDateInput } from "@/lib/date";
+import { dateTimeInputToTimestamp, formatUserDateTime, getUserTimeZone, timestampToDateInput } from "@/lib/date";
 import { Dashboard } from "./dashboard";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
@@ -58,39 +57,6 @@ beforeEach(() => {
 });
 
 describe("dashboard", () => {
-  it("uses the default episode duration for a new anime session", async () => {
-    const user = userEvent.setup();
-    const onSave = vi.fn(async () => {});
-    renderWithQuery(
-      <SessionDialog
-        session={{
-          type: "anime",
-          title: "New anime",
-          created_at: dateInputToTimestamp("2026-10-24"),
-          duration: 0,
-        }}
-        open
-        onOpenChange={vi.fn()}
-        title="Log new session"
-        saveLabel="Save session"
-        requireEpisodeProgress
-        onSave={onSave}
-      />,
-    );
-
-    await user.type(screen.getByRole("textbox", { name: "Episodes watched" }), "12");
-    expect(screen.getByRole("spinbutton", { name: "Episode duration" })).toHaveValue(24);
-    await user.click(screen.getByRole("button", { name: "Save session" }));
-
-    await waitFor(() =>
-      expect(onSave).toHaveBeenCalledWith({
-        created_at: dateInputToTimestamp("2026-10-24"),
-        duration: 1440,
-        progress: { unit: "episode", start: 12, end: 12 },
-      }),
-    );
-  });
-
   it("links the session action to the logging page", async () => {
     renderWithQuery(<Dashboard />);
     expect(screen.getByRole("link", { name: "Log new session" })).toHaveAttribute("href", "/log-session");
@@ -453,7 +419,7 @@ describe("dashboard", () => {
 
     expect(await screen.findByRole("spinbutton", { name: "Hours" })).toHaveValue(1);
     expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(45);
-    expect(screen.getByRole("spinbutton", { name: "Seconds" })).toHaveValue(0);
+    expect(screen.queryByRole("spinbutton", { name: "Seconds" })).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Episodes watched" })).not.toBeInTheDocument();
   });
 

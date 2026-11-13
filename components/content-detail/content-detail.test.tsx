@@ -92,7 +92,7 @@ describe("ContentDetail", () => {
       name: "Immersion sessions for this content",
     });
     expect(within(table).getByText("Pages 45–64")).toBeVisible();
-    for (const count of [19, 24, 29, 34, 39]) {
+    for (const count of [20, 25, 30, 35, 40]) {
       expect(within(table).getByText(`${count} pages`)).toBeVisible();
     }
     const mobileList = screen.getByRole("list", {
@@ -452,6 +452,36 @@ describe("ContentDetail", () => {
     expect(within(table).getByText("Episodes 1–5")).toBeVisible();
     expect(within(table).getByText("5 episodes")).toBeVisible();
     expect(within(table).getByText("1 episode")).toBeVisible();
+  });
+
+  it("labels and counts chapter progress", async () => {
+    const chapterSession = {
+      ...sessions[0],
+      progress: { unit: "chapter", start: 4, end: 6 },
+    } as unknown as SessionHistoryItemResponseDto;
+    server.use(
+      getContentDetailsMockHandler({
+        ...details,
+        lastImmersionSession: {
+          ...details.lastImmersionSession!,
+          progress: { unit: "chapter", start: 4, end: 6 },
+        } as unknown as ContentDetailsResponseDto["lastImmersionSession"],
+      }),
+      getImmersionSessionHistoryMockHandler({
+        items: [chapterSession],
+        total: 1,
+        page: 1,
+        limit: 5,
+      }),
+    );
+
+    renderWithQuery(<ContentDetail contentId="book-1" />);
+
+    const table = await screen.findByRole("table", {
+      name: "Immersion sessions for this content",
+    });
+    expect(within(table).getByText("Chapters 4–6")).toBeVisible();
+    expect(within(table).getByText("3 chapters")).toBeVisible();
   });
 
   it("recovers from a content query error when retried", async () => {

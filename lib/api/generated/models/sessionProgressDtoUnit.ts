@@ -12,4 +12,5 @@ export type SessionProgressDtoUnit = typeof SessionProgressDtoUnit[keyof typeof 
 export const SessionProgressDtoUnit = {
   episode: 'episode',
   page: 'page',
+  chapter: 'chapter',
 } as const;

@@ -9,6 +9,8 @@ import {
 
 export const entry: SessionEntry = {
   type: "anime",
+  durationMode: "calculated",
+  progressUnit: "page",
   language: "language-ja",
   title: "A title",
   url: "",
@@ -67,6 +69,22 @@ describe("session entry", () => {
     expect(episodeDurationSeconds({ start: 2, end: 4 }, 25.5)).toBe(4590);
     expect(episodeDurationSeconds({ start: 2, end: 4 }, 0)).toBeUndefined();
   });
+  it("keeps episode progress when the duration is entered manually", () => {
+    expect(
+      sessionPayload(
+        {
+          ...entry,
+          durationMode: "manual",
+          hours: "0",
+          minutes: "25",
+        },
+        "existing",
+      ),
+    ).toMatchObject({
+      duration: 1500,
+      progress: { unit: "episode", start: 61, end: 64 },
+    });
+  });
   it.each(["0", "-1", "5-2", "1.5", "1-2-3", "", "9007199254740992"])(
     "rejects invalid episode input %s",
     (episodes) => {
@@ -91,6 +109,35 @@ describe("session entry", () => {
       sessionPayload({ ...reading, pageStart: "156", pageEnd: "188" }, "novel")
         .progress,
     ).toEqual({ unit: "page", start: 156, end: 188 });
+  });
+  it("logs chapter progress for books and audiobooks without deriving duration", () => {
+    const book = {
+      ...entry,
+      type: "book" as const,
+      durationMode: "manual" as const,
+      progressUnit: "chapter" as const,
+      hours: "1",
+      minutes: "15",
+      pageStart: "4",
+      pageEnd: "6",
+    };
+    expect(sessionPayload(book, "novel")).toMatchObject({
+      duration: 4500,
+      progress: { unit: "chapter", start: 4, end: 6 },
+    });
+    expect(
+      sessionPayload(
+        {
+          ...book,
+          type: "audiobook",
+          progressUnit: "chapter",
+        },
+        "audio",
+      ),
+    ).toMatchObject({
+      duration: 4500,
+      progress: { unit: "chapter", start: 4, end: 6 },
+    });
   });
   it.each([
     { hours: "0", minutes: "0" },

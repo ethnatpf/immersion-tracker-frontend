@@ -1,5 +1,15 @@
 import type { ComponentProps } from "react";
-import { BookOpen, Film, SquarePlay, Tv } from "lucide-react";
+import {
+  AudioLines,
+  BookOpen,
+  Film,
+  Gamepad2,
+  Headphones,
+  Podcast,
+  Radio,
+  SquarePlay,
+  Tv,
+} from "lucide-react";
 import type { SessionHistoryItemResponseDtoType } from "@/lib/api/generated/models";
 
 export const sessionMediaStyles = {
@@ -32,6 +42,36 @@ export const sessionMediaStyles = {
     icon: SquarePlay,
     color: "#167d68",
     background: "#e8f4ee",
+  },
+  game: {
+    label: "Game",
+    icon: Gamepad2,
+    color: "#167d68",
+    background: "#e8f4ee",
+  },
+  podcast: {
+    label: "Podcast",
+    icon: Podcast,
+    color: "#416d79",
+    background: "#edf4f5",
+  },
+  radio: {
+    label: "Radio",
+    icon: Radio,
+    color: "#416d79",
+    background: "#edf4f5",
+  },
+  audiobook: {
+    label: "Audiobook",
+    icon: Headphones,
+    color: "#416d79",
+    background: "#edf4f5",
+  },
+  audio: {
+    label: "Audio",
+    icon: AudioLines,
+    color: "#416d79",
+    background: "#edf4f5",
   },
 } as const satisfies Record<
   SessionHistoryItemResponseDtoType,

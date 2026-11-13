@@ -30,7 +30,7 @@ import { formatDuration } from "@/lib/duration";
 import { LocalizedDate } from "@/components/localized-date";
 import { sessionMediaStyles } from "@/components/session-media";
 import { SessionActions } from "@/components/session-actions";
-import { SessionDialog } from "@/components/session-dialog";
+import { SessionDialog, type SessionDialogSubmission } from "@/components/session-dialog";
 import { QueryError } from "@/components/error/query-error";
 import { Button } from "@/components/shadcn/button";
 import { Card } from "@/components/shadcn/card";
@@ -46,27 +46,43 @@ import {
 import { useTimerLauncher } from "@/components/timer/timer-feature";
 
 const PAGE_SIZE = 5;
+type ProgressDetails = {
+  unit: "episode" | "page" | "chapter";
+  start: number;
+  end: number;
+};
+
+function progressDetails(progress: unknown) {
+  return progress as ProgressDetails | undefined;
+}
 
 function progressLabel(
   session: Pick<SessionHistoryItemResponseDto, "progress">,
 ) {
-  if (!session.progress) return "Progress not recorded";
-  const noun = session.progress.unit === "page" ? "Pages" : "Episodes";
-  return `${noun} ${session.progress.start}–${session.progress.end}`;
+  const progress = progressDetails(session.progress);
+  if (!progress) return "Progress not recorded";
+  const noun =
+    progress.unit === "page"
+      ? "Pages"
+      : progress.unit === "chapter"
+        ? "Chapters"
+        : "Episodes";
+  return `${noun} ${progress.start}–${progress.end}`;
 }
 
 function progressCount(
   session: Pick<SessionHistoryItemResponseDto, "progress">,
 ) {
-  if (!session.progress) return null;
-  const count = Math.max(
-    0,
-    session.progress.end -
-      session.progress.start +
-      (session.progress.unit === "episode" ? 1 : 0),
-  );
+  const progress = progressDetails(session.progress);
+  if (!progress) return null;
+  const count = Math.max(0, progress.end - progress.start + 1);
   if (count === 0) return null;
-  const unit = session.progress.unit === "page" ? "page" : "episode";
+  const unit =
+    progress.unit === "page"
+      ? "page"
+      : progress.unit === "chapter"
+        ? "chapter"
+        : "episode";
   return `${count} ${unit}${count === 1 ? "" : "s"}`;
 }
 
@@ -76,9 +92,15 @@ function lastSessionDetail(
   const relativeDate = formatDistanceToNowStrict(new Date(session.created_at), {
     addSuffix: true,
   });
-  if (!session.progress) return relativeDate;
-  const prefix = session.progress.unit === "page" ? "p." : "ep.";
-  return `${relativeDate} (${prefix} ${session.progress.start}–${session.progress.end})`;
+  const progress = progressDetails(session.progress);
+  if (!progress) return relativeDate;
+  const prefix =
+    progress.unit === "page"
+      ? "p."
+      : progress.unit === "chapter"
+        ? "ch."
+        : "ep.";
+  return `${relativeDate} (${prefix} ${progress.start}–${progress.end})`;
 }
 
 function ContentBadge({ content }: { content: ContentDetailsResponseDto }) {
@@ -281,11 +303,7 @@ export function ContentDetail({ contentId }: { contentId: string }) {
     }
   }
 
-  async function logSession(data: {
-    created_at: string;
-    duration: number;
-    progress?: SessionHistoryItemResponseDto["progress"];
-  }) {
+  async function logSession(data: SessionDialogSubmission) {
     await createSession.mutateAsync({
       data: {
         content: contentId,
@@ -530,7 +548,9 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           title="Log new session"
           saveLabel="Log session"
           requireEpisodeProgress={
-            details.type === "anime" || details.type === "drama"
+            details.type === "anime" ||
+            details.type === "drama" ||
+            details.type === "podcast"
           }
           onSave={logSession}
         />
