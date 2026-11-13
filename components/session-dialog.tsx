@@ -503,7 +503,7 @@ export function SessionDialog({
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2 sm:col-span-2">
+                  <div className="space-y-2 sm:col-span-1">
                     <label
                       className="block text-xs text-muted-foreground"
                       htmlFor={`session-dialog-episode-duration-${id}`}

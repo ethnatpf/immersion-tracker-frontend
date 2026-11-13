@@ -522,7 +522,7 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           session={{
             type: details.type,
             title: details.title,
-            created_at: new Date().toISOString().slice(0, 10),
+            created_at: new Date().toISOString(),
             duration: 0,
           }}
           open
