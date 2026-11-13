@@ -32,6 +32,7 @@ for (const viewport of [
         .getByRole("link", { name: "Log new session" })
         .click();
       await expect(page).toHaveURL("/log-session");
+      await page.getByRole("button", { name: /Reading/ }).click();
       await page.getByText("Book", { exact: true }).click();
       const language = page.getByRole("combobox", {
         name: "Language",
@@ -51,9 +52,9 @@ for (const viewport of [
         })
         .click();
       await page.getByLabel("Minutes", { exact: true }).fill("15");
-      await page.getByLabel("From page").fill("156");
-      await page.getByLabel("To page").fill("188");
-      await expect(page.getByText("32 pages logged")).toBeVisible();
+      await page.getByRole("spinbutton", { name: "From" }).fill("156");
+      await page.getByRole("spinbutton", { name: "To" }).fill("188");
+      await expect(page.getByText("33 pages logged")).toBeVisible();
       await page
         .getByRole("button", { name: "Save session", exact: true })
         .click();
@@ -78,6 +79,7 @@ for (const viewport of [
           .click();
       }
       await expect(page).toHaveURL("/log-session");
+      await page.getByRole("button", { name: /Reading/ }).click();
       await page.getByText("Book", { exact: true }).click();
       await title.fill(bookTitle);
       await expect(
@@ -88,6 +90,7 @@ for (const viewport of [
         page.getByLabel("Reference link (optional)"),
       ).not.toBeVisible();
 
+      await page.getByRole("button", { name: /Audiovisual/ }).click();
       await page.getByText("Anime", { exact: true }).click();
       await title.fill(animeTitle);
       await page

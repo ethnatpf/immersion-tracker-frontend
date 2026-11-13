@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { useQuery } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+const { redirectToSignIn } = vi.hoisted(() => ({ redirectToSignIn: vi.fn() }));
+vi.mock("@/lib/auth-redirect", () => ({ redirectToSignIn }));
 import { Providers } from "@/app/providers";
 import { apiFetch } from "@/lib/api/fetch";
 import { server } from "@/test/server";

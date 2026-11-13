@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/shadcn/dropdown-menu";
-import { SessionDialog } from "@/components/session-dialog";
+import { SessionDialog, type SessionDialogSubmission } from "@/components/session-dialog";
 import { SessionDeleteDialog } from "@/components/session-delete-dialog";
 
 export function SessionActions({
@@ -50,10 +50,11 @@ export function SessionActions({
     ]);
   }
 
-  async function saveSession(
-    data: Parameters<typeof update.mutateAsync>[0]["data"],
-  ) {
-    await update.mutateAsync({ id: session.id, data });
+  async function saveSession(data: SessionDialogSubmission) {
+    await update.mutateAsync({
+      id: session.id,
+      data,
+    });
     await refreshSessionViews();
     toast.success("Session updated");
   }

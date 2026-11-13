@@ -23,6 +23,8 @@ Choose unit and component integration tests autonomously based on the behavior c
 
 ## Repository conventions
 
+- Keep direct component tests in a dedicated test file for that component (for example, `session-dialog.test.tsx`). Keep parent page tests focused on parent-page behavior and integration flows that open or use the component.
+
 - Unit tests: `*.test.ts`, Node environment. Component integration tests: `*.test.tsx`, jsdom. E2E tests: `e2e/*.spec.ts`.
 - Use `test/render.tsx` for a fresh QueryClient per test with retries disabled. Use the server exported by `test/server.ts`; shared setup rejects unhandled requests and resets handlers between tests.
 - Import generated MSW handler factories from `lib/api/generated/immersion.msw.ts`. Pass explicit, typed fixtures for assertions; do not rely on random generated response values. Override error responses with MSW handlers where the spec does not generate that status.

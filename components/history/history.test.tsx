@@ -219,11 +219,10 @@ describe("History", () => {
         const url = new URL(request.url);
         requests.push(url);
         const types = url.searchParams.getAll("type");
-        const reading = types.includes("book");
-        const watching = types.includes("anime");
+        const reading = types.length === 0 || types.includes("book");
         return {
-          items: [reading ? sessions[0] : watching ? sessions[1] : sessions[0]],
-          total: reading ? 2 : watching ? 3 : 5,
+          items: [reading ? sessions[0] : sessions[1]],
+          total: reading ? 2 : 3,
           page: Number(url.searchParams.get("page")),
           limit: 4,
         };
@@ -236,7 +235,7 @@ describe("History", () => {
       ).findByText("A Japanese novel"),
     ).toBeVisible();
 
-    await user.click(screen.getByRole("tab", { name: "Watching" }));
+    await user.click(screen.getByRole("tab", { name: "Audiovisual" }));
     expect(
       await within(
         await screen.findByRole("table", { name: "Immersion history" }),
@@ -246,6 +245,7 @@ describe("History", () => {
       "anime",
       "drama",
       "video",
+      "game",
     ]);
     expect(screen.getAllByText("Showing 1–3 of 3 entries")[0]).toBeVisible();
 
@@ -256,8 +256,8 @@ describe("History", () => {
       ).findByText("A Japanese novel"),
     ).toBeVisible();
     expect(requests.at(-1)?.searchParams.getAll("type")).toEqual([
-      "book",
       "manga",
+      "book",
     ]);
     expect(screen.getAllByText("Showing 1–2 of 2 entries")[0]).toBeVisible();
   });

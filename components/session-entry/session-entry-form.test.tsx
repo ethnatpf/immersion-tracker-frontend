@@ -2,6 +2,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+const { redirectToSignIn } = vi.hoisted(() => ({ redirectToSignIn: vi.fn() }));
+vi.mock("@/lib/auth-redirect", () => ({ redirectToSignIn }));
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { toast } from "sonner";
@@ -55,6 +57,7 @@ afterEach(() => {
 
 beforeEach(() => {
   push.mockReset();
+  redirectToSignIn.mockReset();
   searches = [];
   writes = [];
   creates = [];
@@ -108,12 +111,30 @@ async function selectExisting() {
 }
 
 describe("session entry form", () => {
-  it.each(["session_expired", "api_unauthorized"])(
-    "presents a mutation authorization failure in a toast: %s",
-    async (code) => {
+  it.each([
+    {
+      code: "api_unauthorized",
+      message: "The server could not authorize this request. Please try again.",
+    },
+    {
+      code: "auth_unavailable",
+      message: "Could not verify your session. Please try again.",
+    },
+  ])(
+    "presents a recoverable mutation authorization failure in a toast: $code",
+    async ({ code, message }) => {
       server.use(
         http.post("*/api/backend/immersion-session", () =>
-          HttpResponse.json({ code, message: "Unauthorized" }, { status: 401 }),
+          HttpResponse.json(
+            {
+              code,
+              message:
+                code === "auth_unavailable"
+                  ? "Could not verify your session. Please try again."
+                  : "Unauthorized",
+            },
+            { status: 401 },
+          ),
         ),
       );
       renderWithQuery(
@@ -129,24 +150,42 @@ describe("session entry form", () => {
       });
       expect(
         await within(notifications).findByText(
-          code === "session_expired"
-            ? "Your session needs to be renewed. Please sign in again."
-            : "The server could not authorize this request. Please try again.",
+          message,
         ),
       ).toBeVisible();
-      if (code === "session_expired")
-        expect(
-          within(notifications).getByRole("button", { name: "Sign in again" }),
-        ).toBeVisible();
-      else
-        expect(
-          within(notifications).queryByRole("button", {
-            name: "Sign in again",
-          }),
-        ).not.toBeInTheDocument();
+      expect(
+        within(notifications).queryByRole("button", {
+          name: "Sign in again",
+        }),
+      ).not.toBeInTheDocument();
       expect(screen.getByLabelText("Episodes watched")).toHaveValue("61–64");
     },
   );
+
+  it("automatically redirects after an unrecoverable mutation session error", async () => {
+    server.use(
+      http.post("*/api/backend/immersion-session", () =>
+        HttpResponse.json(
+          { code: "session_expired", message: "Please sign in again." },
+          { status: 401 },
+        ),
+      ),
+    );
+    renderWithQuery(
+      <>
+        <SessionEntryForm />
+        <Toaster />
+      </>,
+    );
+    const user = await selectExisting();
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+
+    await waitFor(() => expect(redirectToSignIn).toHaveBeenCalledOnce());
+    expect(screen.getByLabelText("Episodes watched")).toHaveValue("61–64");
+    expect(
+      screen.queryByText("Your session needs to be renewed. Please sign in again."),
+    ).not.toBeInTheDocument();
+  });
   it.each([
     { message: "url must be a URL address" },
     { message: ["url must be a URL address", "title is already in use"] },
@@ -231,10 +270,10 @@ describe("session entry form", () => {
     renderWithQuery(<SessionEntryForm />);
     const user = userEvent.setup();
     await screen.findByText("Japanese (日本語)");
-    await user.click(screen.getByRole("radio", { name: "Video" }));
+    await user.click(screen.getByRole("button", { name: "Video" }));
     expect(screen.getByText("Enter your viewing time.")).toBeVisible();
     expect(screen.queryByLabelText("Episodes watched")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("From page")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("From")).not.toBeInTheDocument();
     await user.type(
       screen.getByRole("combobox", { name: "Title / search" }),
       "Lecture",
@@ -249,6 +288,82 @@ describe("session entry form", () => {
     expect(creates[0]).toMatchObject({ title: "Lecture", type: "video" });
     expect(writes[0]).toMatchObject({ duration: 2100 });
     expect(writes[0].progress).toBeUndefined();
+  });
+  it("keeps anime episode progress when duration is entered manually", async () => {
+    renderWithQuery(<SessionEntryForm />);
+    const user = await selectExisting();
+    await user.click(
+      screen.getByRole("button", { name: "Enter time manually" }),
+    );
+    expect(screen.getByLabelText("Episodes watched")).toHaveValue("61–64");
+    await user.clear(screen.getByLabelText("Minutes"));
+    await user.type(screen.getByLabelText("Minutes"), "25");
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/"));
+    expect(writes[0]).toMatchObject({
+      duration: 1500,
+      progress: { unit: "episode", start: 61, end: 64 },
+    });
+  });
+
+  it("logs audiobook chapter progress with a manually entered duration", async () => {
+    renderWithQuery(<SessionEntryForm />);
+    const user = userEvent.setup();
+    await screen.findByText("Japanese (日本語)");
+    await user.click(
+      within(screen.getByRole("group", { name: "Content category" })).getByRole(
+        "button",
+        { name: /^Audio4 types$/ },
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Audiobook" }));
+    await user.type(
+      screen.getByRole("combobox", { name: "Title / search" }),
+      "Audio title",
+    );
+    await user.click(
+      await screen.findByRole("option", { name: /Create.*Audio title/ }),
+    );
+    await user.type(screen.getByLabelText("From"), "4");
+    await user.type(screen.getByLabelText("To"), "6");
+    await user.clear(screen.getByLabelText("Hours"));
+    await user.type(screen.getByLabelText("Hours"), "1");
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/"));
+    expect(writes[0]).toMatchObject({
+      duration: 3600,
+      progress: { unit: "chapter", start: 4, end: 6 },
+    });
+  });
+
+  it("switches reading progress to chapters without changing manual duration", async () => {
+    renderWithQuery(<SessionEntryForm />);
+    const user = userEvent.setup();
+    await screen.findByText("Japanese (日本語)");
+    await user.click(
+      within(screen.getByRole("group", { name: "Content category" })).getByRole(
+        "button",
+        { name: /^Reading/ },
+      ),
+    );
+    await user.click(screen.getByRole("combobox", { name: "Progress unit" }));
+    await user.click(await screen.findByRole("option", { name: "Chapters" }));
+    await user.type(screen.getByLabelText("From"), "7");
+    await user.type(screen.getByLabelText("To"), "9");
+    await user.clear(screen.getByLabelText("Minutes"));
+    await user.type(screen.getByLabelText("Minutes"), "45");
+    await user.type(
+      screen.getByRole("combobox", { name: "Title / search" }),
+      "Novel",
+    );
+    await user.click(await screen.findByRole("option", { name: /Create.*Novel/ }));
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/"));
+    expect(writes[0]).toMatchObject({
+      duration: 2700,
+      progress: { unit: "chapter", start: 7, end: 9 },
+    });
   });
   it("selects a log date from the calendar and saves that calendar day", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -427,7 +542,7 @@ describe("session entry form", () => {
     renderWithQuery(<SessionEntryForm />);
     const user = userEvent.setup();
     await screen.findByText("Japanese (日本語)");
-    await user.click(screen.getByRole("radio", { name: "Video" }));
+    await user.click(screen.getByRole("button", { name: "Video" }));
     await user.type(
       screen.getByRole("combobox", { name: "Title / search" }),
       "lesson",
@@ -471,6 +586,7 @@ describe("session entry form", () => {
   });
 
   it("keeps independent controls usable when there are no languages", async () => {
+    const user = userEvent.setup();
     server.use(getLanguageListMockHandler([]));
     renderWithQuery(<SessionEntryForm />);
     expect(
@@ -483,7 +599,13 @@ describe("session entry form", () => {
       "href",
       "/",
     );
-    expect(screen.getByRole("radio", { name: "Book" })).toBeEnabled();
+    await user.click(
+      within(screen.getByRole("group", { name: "Content category" })).getByRole(
+        "button",
+        { name: /Reading/ },
+      ),
+    );
+    expect(screen.getByRole("button", { name: "Book" })).toBeEnabled();
   });
 
   it("blocks duplicate submissions while saving", async () => {
@@ -525,6 +647,7 @@ describe("session entry form", () => {
         current_streak: 0,
         reading_time: 0,
         audiovisual_time: writes.length ? 5760 : 0,
+        audio_time: 0,
         average_time: 0,
         breakdown: [],
       })),
@@ -602,7 +725,13 @@ describe("session entry form", () => {
         </>,
         status === 503 ? { onCaughtError: () => {} } : undefined,
       );
-      await user.click(screen.getByRole("radio", { name: "Book" }));
+      await user.click(
+        within(screen.getByRole("group", { name: "Content category" })).getByRole(
+          "button",
+          { name: /Reading/ },
+        ),
+      );
+      await user.click(screen.getByRole("button", { name: "Book" }));
       await user.type(
         await screen.findByRole("combobox", { name: "Title / search" }),
         "Kitchen",
@@ -618,9 +747,9 @@ describe("session entry form", () => {
       await user.type(screen.getByLabelText("Hours"), "1");
       await user.clear(screen.getByLabelText("Minutes"));
       await user.type(screen.getByLabelText("Minutes"), "15");
-      await user.type(screen.getByLabelText("From page"), "156");
-      await user.type(screen.getByLabelText("To page"), "188");
-      expect(screen.getByText("32 pages logged")).toBeVisible();
+      await user.type(screen.getByLabelText("From"), "156");
+      await user.type(screen.getByLabelText("To"), "188");
+      expect(screen.getByText("33 pages logged")).toBeVisible();
       expect(creates).toHaveLength(0);
       await user.click(screen.getByRole("button", { name: "Save session" }));
       expect(

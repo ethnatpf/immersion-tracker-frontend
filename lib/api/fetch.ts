@@ -1,3 +1,5 @@
+import { redirectToSignIn } from "@/lib/auth-redirect";
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -23,6 +25,17 @@ export async function apiFetch<T>(url: string, options?: RequestInit): Promise<T
       body = text;
     }
   }
-  if (!response.ok) throw new ApiError(response.status, body, response.headers.get("X-Request-ID") ?? undefined);
+  if (!response.ok) {
+    if (
+      response.status === 401 &&
+      typeof body === "object" &&
+      body !== null &&
+      "code" in body &&
+      body.code === "session_expired"
+    ) {
+      redirectToSignIn();
+    }
+    throw new ApiError(response.status, body, response.headers.get("X-Request-ID") ?? undefined);
+  }
   return body as T;
 }

@@ -2,13 +2,14 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+const redirect = vi.hoisted(() => ({ toSignIn: vi.fn() }));
+vi.mock("@/lib/auth-redirect", () => ({ redirectToSignIn: redirect.toSignIn }));
 import { renderWithQuery } from "@/test/render";
 import { server } from "@/test/server";
 import { Toaster } from "@/components/shadcn/sonner";
-import { SessionDialog } from "@/components/session-dialog";
 import { getDashboardStatisticsMockHandler, getImmersionSessionHistoryMockHandler, getLanguageListMockHandler, getUserPreferencesMockHandler } from "@/lib/api/generated/immersion.msw";
 import type { DashboardStatisticsResponseDto, LanguageResponseDto, SessionHistoryResponseDto } from "@/lib/api/generated/models";
-import { dateInputToTimestamp, dateTimeInputToTimestamp, formatUserDateTime, getUserTimeZone, timestampToDateInput } from "@/lib/date";
+import { dateTimeInputToTimestamp, formatUserDateTime, getUserTimeZone, timestampToDateInput } from "@/lib/date";
 import { Dashboard } from "./dashboard";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
@@ -32,8 +33,8 @@ const languages: LanguageResponseDto[] = [
   { id: "es", code: "es", name: "Spanish", nativeName: "Español" },
 ];
 const stats: DashboardStatisticsResponseDto = {
-  total_immersion_time: 1736100, current_streak: 42, reading_time: 3600, audiovisual_time: 1732500, average_time: 7200,
-  breakdown: [{ start_date: "2026-10-19", reading_time: 1800, audiovisual_time: 7200 }, { start_date: "2026-10-20", reading_time: 1800, audiovisual_time: 3600 }],
+  total_immersion_time: 1739700, current_streak: 42, reading_time: 3600, audiovisual_time: 1732500, audio_time: 3600, average_time: 7200,
+  breakdown: [{ start_date: "2026-10-19", reading_time: 1800, audiovisual_time: 7200, audio_time: 1800 }, { start_date: "2026-10-20", reading_time: 1800, audiovisual_time: 3600, audio_time: 1800 }],
 };
 const history: SessionHistoryResponseDto = {
   items: [{ id: "session-1", content_id: "book-1", type: "book", title: "A Japanese novel", duration: 6300, created_at: "2026-10-24T01:00:00Z" }],
@@ -56,39 +57,6 @@ beforeEach(() => {
 });
 
 describe("dashboard", () => {
-  it("uses the default episode duration for a new anime session", async () => {
-    const user = userEvent.setup();
-    const onSave = vi.fn(async () => {});
-    renderWithQuery(
-      <SessionDialog
-        session={{
-          type: "anime",
-          title: "New anime",
-          created_at: dateInputToTimestamp("2026-10-24"),
-          duration: 0,
-        }}
-        open
-        onOpenChange={vi.fn()}
-        title="Log new session"
-        saveLabel="Save session"
-        requireEpisodeProgress
-        onSave={onSave}
-      />,
-    );
-
-    await user.type(screen.getByRole("textbox", { name: "Episodes watched" }), "12");
-    expect(screen.getByRole("spinbutton", { name: "Episode duration" })).toHaveValue(24);
-    await user.click(screen.getByRole("button", { name: "Save session" }));
-
-    await waitFor(() =>
-      expect(onSave).toHaveBeenCalledWith({
-        created_at: dateInputToTimestamp("2026-10-24"),
-        duration: 1440,
-        progress: { unit: "episode", start: 12, end: 12 },
-      }),
-    );
-  });
-
   it("links the session action to the logging page", async () => {
     renderWithQuery(<Dashboard />);
     expect(screen.getByRole("link", { name: "Log new session" })).toHaveAttribute("href", "/log-session");
@@ -97,9 +65,10 @@ describe("dashboard", () => {
   it("loads the preferred language and binds metrics, charts, and recent sessions to the SDK responses", async () => {
     renderWithQuery(<Dashboard />);
     const total = await screen.findByRole("region", { name: "Total immersion" });
-    expect(within(total).getByText("482:15:00")).toBeVisible();
+    expect(within(total).getByText("483:15:00")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "Current streak" })).getByText("42")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "Reading time" })).getByText("1.0h")).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Audio time" })).getByText("1.0h")).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Dashboard language" })).toHaveTextContent("Spanish");
     expect(statisticsRequests[0].searchParams.get("language")).toBe("es");
     expect(statisticsRequests[0].searchParams.get("range")).toBe("week");
@@ -230,7 +199,7 @@ describe("dashboard", () => {
   });
 
   it("shows empty statistics and sessions without inventing data", async () => {
-    server.use(getDashboardStatisticsMockHandler({ total_immersion_time: 0, reading_time: 0, audiovisual_time: 0, average_time: 0, current_streak: 0, breakdown: [] }), getImmersionSessionHistoryMockHandler({ items: [], total: 0, page: 1, limit: 5 }));
+    server.use(getDashboardStatisticsMockHandler({ total_immersion_time: 0, reading_time: 0, audiovisual_time: 0, audio_time: 0, average_time: 0, current_streak: 0, breakdown: [] }), getImmersionSessionHistoryMockHandler({ items: [], total: 0, page: 1, limit: 5 }));
     renderWithQuery(<Dashboard />);
     expect(await screen.findByText("No reading immersion in this period.")).toBeVisible();
     expect(screen.getByText("No audiovisual immersion in this period.")).toBeVisible();
@@ -259,6 +228,18 @@ describe("dashboard", () => {
     const error = await screen.findByRole("alert");
     expect(within(error).getByRole("link", { name: "Sign in again" })).toHaveAttribute("href", "/auth/login?returnTo=%2F");
     expect(statisticsRequests).toHaveLength(0);
+  });
+
+  it("offers retry when Auth0 cannot currently verify the session", async () => {
+    server.use(http.get("*/user/preferences", () => HttpResponse.json({
+      code: "auth_unavailable",
+      message: "Could not verify your session. Please try again.",
+    }, { status: 401 })));
+    renderWithQuery(<Dashboard />);
+    const error = await screen.findByRole("alert");
+    expect(error).toHaveTextContent("Could not verify your session. Please try again.");
+    expect(within(error).getByRole("button", { name: "Try again" })).toBeVisible();
+    expect(within(error).queryByRole("link", { name: "Sign in again" })).not.toBeInTheDocument();
   });
 
   it("does not ask signed-in users to log in again when the backend rejects their token", async () => {
@@ -439,7 +420,7 @@ describe("dashboard", () => {
 
     expect(await screen.findByRole("spinbutton", { name: "Hours" })).toHaveValue(1);
     expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(45);
-    expect(screen.getByRole("spinbutton", { name: "Seconds" })).toHaveValue(0);
+    expect(screen.queryByRole("spinbutton", { name: "Seconds" })).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Episodes watched" })).not.toBeInTheDocument();
   });
 
@@ -543,7 +524,7 @@ describe("dashboard", () => {
     server.use(getLanguageListMockHandler(languages), getUserPreferencesMockHandler({ preferred_language: "es" }), getDashboardStatisticsMockHandler(stats), getImmersionSessionHistoryMockHandler(history));
     await user.click(screen.getByRole("button", { name: "Try again" }));
     const total = await screen.findByRole("region", { name: "Total immersion" });
-    expect(within(total).getByText("482:15:00")).toBeVisible();
+    expect(within(total).getByText("483:15:00")).toBeVisible();
     expect(await screen.findByRole("table", { name: "Recent immersion sessions" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Something went wrong" })).not.toBeInTheDocument();
   });

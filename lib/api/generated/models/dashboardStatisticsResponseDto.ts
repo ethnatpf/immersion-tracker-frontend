@@ -16,6 +16,8 @@ export interface DashboardStatisticsResponseDto {
   reading_time: number;
   /** Audiovisual duration in seconds */
   audiovisual_time: number;
+  /** Audio duration in seconds */
+  audio_time: number;
   /** Daily average immersion duration in seconds */
   average_time: number;
   breakdown: DashboardBucketResponseDto[];

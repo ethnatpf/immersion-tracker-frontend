@@ -1,4 +1,9 @@
 import { auth0 } from "@/lib/auth0";
+import {
+  AccessTokenError,
+  AccessTokenErrorCode,
+  MfaRequiredError,
+} from "@auth0/nextjs-auth0/errors";
 
 const authorizedPaths = new Map<string, readonly string[]>([
   ["language", ["GET"]],
@@ -68,9 +73,18 @@ async function forward(
   let token: string;
   try {
     ({ token } = await auth0.getAccessToken());
-  } catch {
+  } catch (error) {
+    if (isUnrecoverableSessionError(error)) {
+      return Response.json(
+        { code: "session_expired", message: "Please sign in again." },
+        { status: 401, headers: privateHeaders },
+      );
+    }
     return Response.json(
-      { code: "session_expired", message: "Please sign in again." },
+      {
+        code: "auth_unavailable",
+        message: "Could not verify your session. Please try again.",
+      },
       { status: 401, headers: privateHeaders },
     );
   }
@@ -132,4 +146,17 @@ async function forward(
       { status: 502, headers: privateHeaders },
     );
   }
+}
+
+function isUnrecoverableSessionError(error: unknown) {
+  if (error instanceof MfaRequiredError) return true;
+  if (!(error instanceof AccessTokenError)) return false;
+
+  return (
+    error.code === AccessTokenErrorCode.MISSING_SESSION ||
+    error.code === AccessTokenErrorCode.MISSING_REFRESH_TOKEN ||
+    error.code === AccessTokenErrorCode.SESSION_EXPIRED ||
+    (error.code === AccessTokenErrorCode.FAILED_TO_REFRESH_TOKEN &&
+      error.cause?.code === "invalid_grant")
+  );
 }

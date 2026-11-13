@@ -15,4 +15,9 @@ export const ContentDetailsResponseDtoType = {
   manga: 'manga',
   drama: 'drama',
   video: 'video',
+  game: 'game',
+  podcast: 'podcast',
+  radio: 'radio',
+  audiobook: 'audiobook',
+  audio: 'audio',
 } as const;

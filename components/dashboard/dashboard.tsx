@@ -6,6 +6,7 @@ import {
   BookOpen,
   Clock,
   Flame,
+  Headphones,
   Plus,
   SquarePlay,
   Timer,
@@ -95,7 +96,7 @@ function Statistics({
 }) {
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 xl:gap-4">
         <Metric
           label="Total immersion"
           value={formatDuration(stats.total_immersion_time)}
@@ -118,6 +119,12 @@ function Statistics({
           label="Audiovisual time"
           value={formatHours(stats.audiovisual_time)}
           icon={SquarePlay}
+        />
+        <Metric
+          label="Audio time"
+          value={formatHours(stats.audio_time)}
+          icon={Headphones}
+          tone="blue"
         />
       </div>
       <div className="grid gap-4 xl:grid-cols-2 xl:gap-5">
@@ -145,8 +152,8 @@ function StatisticsLoading() {
       aria-label="Loading dashboard statistics"
       className="space-y-6"
     >
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-5">
-        {Array.from({ length: 4 }, (_, i) => (
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 xl:gap-4">
+        {Array.from({ length: 5 }, (_, i) => (
           <Skeleton key={i} className="h-[124px] rounded-[14px]" />
         ))}
       </div>

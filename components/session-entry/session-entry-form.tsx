@@ -4,9 +4,11 @@ import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { ContentPicker, type ContentChoice } from "@/components/content-picker";
+import { ContentTypeSelector } from "@/components/content-type-selector";
+import { SessionProgressUnitSelect } from "@/components/session-progress-unit-select";
 import { DatePicker } from "@/components/shadcn/date-picker";
 import { ApiErrorBoundary } from "@/components/error/api-error-boundary";
 import { QueryError } from "@/components/error/query-error";
@@ -34,17 +36,12 @@ import {
   episodeRange,
   isReading,
   usesManualDuration,
+  usesEpisodeProgress,
   sessionEntrySchema,
   sessionPayload,
   type SessionEntry,
 } from "@/lib/session-entry";
 import { cn } from "@/lib/utils";
-import {
-  sessionMediaStyles,
-  SessionTypeIcon,
-} from "@/components/session-media";
-
-const contentTypes = ["anime", "drama", "video", "manga", "book"] as const;
 
 function Section({
   number,
@@ -102,6 +99,8 @@ function SessionEntryFormContent() {
   // Keep the draft outside the mutation boundary so server-error recovery cannot repeat a write or lose a confirmed content ID.
   const [entry, setEntry] = useState<SessionEntry>(() => ({
     type: "anime",
+    durationMode: "calculated",
+    progressUnit: "page",
     language: "",
     title: "",
     url: "",
@@ -158,7 +157,8 @@ function SessionFormBody({
     )?.id ?? "";
   const language = entry.language || preferred;
   const reading = isReading(entry.type);
-  const manualDuration = usesManualDuration(entry.type);
+  const manualDuration =
+    usesManualDuration(entry.type) || entry.durationMode === "manual";
   const loading = languages.isLoading || preferences.isLoading;
   const settingsError = languages.error ?? preferences.error;
   const range = episodeRange(entry.episodes);
@@ -322,65 +322,32 @@ function SessionFormBody({
         >
           <legend className="sr-only">Immersion session</legend>
           <Section number={1} title="Content type">
-            <div
-              role="radiogroup"
-              aria-label="Content type"
-              className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5 xl:gap-4"
-            >
-              {contentTypes.map((value) => {
-                const { label } = sessionMediaStyles[value];
-                return (
-                  <label
-                    key={value}
-                    className={cn(
-                      "relative flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-border bg-[#f9fbfa] px-4 text-sm md:min-h-[70px]",
-                      entry.type === value &&
-                        "border-primary bg-accent font-semibold text-primary",
-                    )}
-                  >
-                    <input
-                      className="peer sr-only"
-                      type="radio"
-                      name="content-type"
-                      value={value}
-                      checked={entry.type === value}
-                      onChange={() => {
-                        setSelected(null);
-                        setEntry({
-                          ...entry,
-                          type: value,
-                          title: "",
-                          url: "",
-                          episodeMinutes:
-                            value === "anime"
-                              ? String(DEFAULT_EPISODE_MINUTES.anime)
-                              : "",
-                          episodes: "",
-                          pageStart: "",
-                          pageEnd: "",
-                        });
-                        setErrors({});
-                        createContent.reset();
-                        createSession.reset();
-                      }}
-                    />
-                    <span className="pointer-events-none absolute inset-0 rounded-xl peer-focus-visible:ring-2 peer-focus-visible:ring-ring" />
-                    <SessionTypeIcon
-                      type={value}
-                      aria-hidden="true"
-                      className="size-5 shrink-0"
-                    />
-                    <span>{label}</span>
-                    {entry.type === value && (
-                      <Check
-                        aria-hidden="true"
-                        className="ml-auto size-4 shrink-0"
-                      />
-                    )}
-                  </label>
-                );
-              })}
-            </div>
+            <ContentTypeSelector
+              type={entry.type}
+              onTypeChange={(value) => {
+                setSelected(null);
+                setEntry({
+                  ...entry,
+                  type: value,
+                  durationMode: usesManualDuration(value) ? "manual" : "calculated",
+                  progressUnit: value === "audiobook" ? "chapter" : "page",
+                  title: "",
+                  url: "",
+                  episodeMinutes:
+                    value === "anime"
+                      ? String(DEFAULT_EPISODE_MINUTES.anime)
+                      : value === "drama"
+                        ? String(DEFAULT_EPISODE_MINUTES.drama)
+                        : "",
+                  episodes: "",
+                  pageStart: "",
+                  pageEnd: "",
+                });
+                setErrors({});
+                createContent.reset();
+                createSession.reset();
+              }}
+            />
           </Section>
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)] lg:gap-6">
             <Section number={2} title="Session details" className="space-y-5">
@@ -461,24 +428,58 @@ function SessionFormBody({
                 }}
                 error={errors.title}
               />
-              {reading && (
+              {(reading || entry.type === "audiobook") && (
                 <div className="space-y-3">
                   <div className="flex flex-wrap justify-between gap-2 text-xs">
                     <span className="text-muted-foreground">
-                      Page range (optional)
+                      {entry.progressUnit === "page"
+                        ? "Page range (optional)"
+                        : "Chapter range (optional)"}
                     </span>
                     {entry.pageStart &&
                       entry.pageEnd &&
                       Number(entry.pageEnd) >= Number(entry.pageStart) && (
                         <span className="text-primary">
-                          {Number(entry.pageEnd) - Number(entry.pageStart)}{" "}
-                          pages logged
+                          {Number(entry.pageEnd) -
+                            Number(entry.pageStart) +
+                            1}{" "}
+                          {entry.progressUnit === "page" ? "pages" : "chapters"} logged
                         </span>
                       )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {field("pageStart", "From page", { min: 1 })}
-                    {field("pageEnd", "To page", { min: 1 })}
+                  <div
+                    className={cn(
+                      "grid gap-3",
+                      isReading(entry.type) || entry.type === "audiobook"
+                        ? "grid-cols-3"
+                        : "grid-cols-2",
+                    )}
+                  >
+                    {field(
+                      "pageStart",
+                      "From",
+                      { min: 1 },
+                    )}
+                    {field(
+                      "pageEnd",
+                      "To",
+                      { min: 1 },
+                    )}
+                    {(isReading(entry.type) || entry.type === "audiobook") && (
+                      <div className="min-w-0 space-y-2">
+                        <label className="block text-xs text-muted-foreground">
+                          Unit
+                        </label>
+                        <SessionProgressUnitSelect
+                          value={entry.progressUnit}
+                          allowPages={isReading(entry.type)}
+                          disabled={!isReading(entry.type)}
+                          onValueChange={(value) =>
+                            update("progressUnit", value)
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -557,7 +558,7 @@ function SessionFormBody({
             </Section>
             <Section
               number={3}
-              title={manualDuration ? "Session time" : "Time & episodes"}
+              title={manualDuration ? "Session time" : "Time & progress"}
             >
               <span
                 className={cn(
@@ -567,14 +568,89 @@ function SessionFormBody({
                     : "bg-accent text-primary",
                 )}
               >
-                {manualDuration ? "Manual" : "Audiovisual"}
+                {manualDuration
+                  ? "Manual"
+                  : entry.type === "podcast" || entry.type === "audiobook"
+                    ? "Audio"
+                    : "Audiovisual"}
               </span>
-              {manualDuration ? (
-                <>
+              {usesEpisodeProgress(entry.type) && (
+                <div className="space-y-5">
+                  <div>
+                    {field(
+                      "episodes",
+                      entry.type === "podcast"
+                        ? "Episodes listened"
+                        : "Episodes watched",
+                      { type: "text", placeholder: "e.g. 4 or 61–64" },
+                    )}
+                    <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+                      Enter an episode number (e.g. 4) or a range (e.g. 61–64).
+                    </p>
+                  </div>
+                  {!manualDuration && (
+                    <div>
+                      {field(
+                        "episodeMinutes",
+                        "Episode duration (minutes)",
+                        { min: 0, step: "any" },
+                      )}
+                      {entry.type === "podcast" && (
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Enter the actual length of each episode.
+                        </p>
+                      )}
+                      {entry.type === "anime" && (
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Standard TV anime length: {DEFAULT_EPISODE_MINUTES.anime} min.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {!manualDuration && (
+                    <div
+                      aria-live="polite"
+                      className="rounded-xl bg-accent p-4 text-center text-primary"
+                    >
+                      <p className="text-[11px]">Total calculated</p>
+                      <p className="mt-2 text-[28px] font-semibold tabular-nums">
+                        {formatDuration(
+                          Number.isSafeInteger(total) && total > 0 ? total : 0,
+                        )}
+                      </p>
+                      <p className="text-[11px]">
+                        {Number.isSafeInteger(total) && total > 0
+                          ? total / 60
+                          : 0} min
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {usesEpisodeProgress(entry.type) && (
+                <button
+                  type="button"
+                  className="mt-4 text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline"
+                  onClick={() =>
+                    update(
+                      "durationMode",
+                      manualDuration ? "calculated" : "manual",
+                    )
+                  }
+                >
+                  {manualDuration
+                    ? "Use calculated time"
+                    : "Enter time manually"}
+                </button>
+              )}
+              {manualDuration && (
+                <div className="mt-5">
                   <p className="mb-5 text-sm text-muted-foreground">
-                    {reading
+                    {isReading(entry.type) || entry.type === "audiobook"
                       ? "Enter your reading time."
-                      : "Enter your viewing time."}
+                      : entry.type === "podcast"
+                        ? "Enter your listening time."
+                        : "Enter your viewing time."}
                   </p>
                   <div className="grid grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)] gap-4">
                     {field("hours", "Hours", { min: 0, prominent: true })}
@@ -589,47 +665,6 @@ function SessionFormBody({
                       max: 59,
                       prominent: true,
                     })}
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-5">
-                  <div>
-                    {field("episodes", "Episodes watched", {
-                      type: "text",
-                      placeholder: "e.g. 4 or 61–64",
-                    })}
-                    <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
-                      Enter an episode number (e.g. 4) or a range (e.g. 61–64).
-                    </p>
-                  </div>
-                  <div>
-                    {field("episodeMinutes", "Episode duration (minutes)", {
-                      min: 0,
-                      step: "any",
-                    })}
-                    {entry.type === "anime" && (
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        Standard TV anime length:{" "}
-                        {DEFAULT_EPISODE_MINUTES.anime} min.
-                      </p>
-                    )}
-                  </div>
-                  <div
-                    aria-live="polite"
-                    className="rounded-xl bg-accent p-4 text-center text-primary"
-                  >
-                    <p className="text-[11px]">Total calculated</p>
-                    <p className="mt-2 text-[28px] font-semibold tabular-nums">
-                      {formatDuration(
-                        Number.isSafeInteger(total) && total > 0 ? total : 0,
-                      )}
-                    </p>
-                    <p className="text-[11px]">
-                      {Number.isSafeInteger(total) && total > 0
-                        ? total / 60
-                        : 0}{" "}
-                      min
-                    </p>
                   </div>
                 </div>
               )}

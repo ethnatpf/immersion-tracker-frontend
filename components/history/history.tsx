@@ -35,16 +35,19 @@ import {
   TableRow,
 } from "@/components/shadcn/table";
 import { contentDetailPath } from "@/lib/content";
+import {
+  contentTypesByCategory,
+  type ContentCategory,
+} from "@/lib/content-types";
 
 const PAGE_SIZE = 4;
-type Category = "all" | "reading" | "watching";
+type Category = "all" | ContentCategory;
 const categoryTypes: Record<
   Category,
   ImmersionSessionHistoryTypeItem[] | undefined
 > = {
   all: undefined,
-  reading: ["book", "manga"],
-  watching: ["anime", "drama", "video"],
+  ...contentTypesByCategory,
 };
 const categoryTabClassName =
   "text-xs text-muted-foreground hover:text-muted-foreground data-active:bg-white data-active:text-primary data-active:hover:text-primary data-active:shadow-none";
@@ -233,7 +236,12 @@ export function History() {
     <Tabs
       value={category}
       onValueChange={(value) => {
-        if (value !== "all" && value !== "reading" && value !== "watching")
+        if (
+          value !== "all" &&
+          value !== "audio" &&
+          value !== "reading" &&
+          value !== "audiovisual"
+        )
           return;
         setCategory(value);
         setPage(1);
@@ -248,7 +256,7 @@ export function History() {
           Immersion history
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Every session, in one place. Find your reading and watching history.
+          Every session, in one place. Find your audio, reading, and audiovisual history.
         </p>
       </header>
 
@@ -276,11 +284,14 @@ export function History() {
             <TabsTrigger value="all" className={categoryTabClassName}>
               All
             </TabsTrigger>
+            <TabsTrigger value="audio" className={categoryTabClassName}>
+              Audio
+            </TabsTrigger>
             <TabsTrigger value="reading" className={categoryTabClassName}>
               Reading
             </TabsTrigger>
-            <TabsTrigger value="watching" className={categoryTabClassName}>
-              Watching
+            <TabsTrigger value="audiovisual" className={categoryTabClassName}>
+              Audiovisual
             </TabsTrigger>
           </TabsList>
         </div>
@@ -295,7 +306,7 @@ export function History() {
         />
       </Card>
 
-      {(["all", "reading", "watching"] as const).map((value) => (
+      {(["all", "audio", "reading", "audiovisual"] as const).map((value) => (
         <TabsContent key={value} value={value} className="outline-none">
           {category === value &&
             (history.isError ? (

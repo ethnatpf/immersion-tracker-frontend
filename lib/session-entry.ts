@@ -1,9 +1,12 @@
 import type {
   CreateImmersionSessionDto,
   CreateContentDtoType,
+  SessionProgressDto,
 } from "@/lib/api/generated/models";
+import { CreateContentDtoType as ContentType } from "@/lib/api/generated/models";
 import { z } from "zod";
 import { isUnsignedIntegerInRange } from "@/lib/number";
+import type { ReadingProgressUnit } from "@/lib/session-progress";
 import {
   dateTimeInputToTimestamp,
   isLocalDateTimeInPastOrPresent,
@@ -14,6 +17,8 @@ import {
 
 export type SessionEntry = {
   type: CreateContentDtoType;
+  durationMode: "calculated" | "manual";
+  progressUnit: ReadingProgressUnit;
   language: string;
   title: string;
   url: string;
@@ -62,13 +67,28 @@ export function isReading(type: CreateContentDtoType) {
   return type === "book" || type === "manga";
 }
 
+export function usesEpisodeProgress(type: CreateContentDtoType) {
+  return type === "anime" || type === "drama" || type === "podcast";
+}
+
 export function usesManualDuration(type: CreateContentDtoType) {
-  return isReading(type) || type === "video";
+  return !usesEpisodeProgress(type);
+}
+
+export function supportsProgress(type: CreateContentDtoType) {
+  return (
+    usesEpisodeProgress(type) ||
+    type === "book" ||
+    type === "manga" ||
+    type === "audiobook"
+  );
 }
 
 export const sessionEntrySchema = z
   .object({
-    type: z.enum(["anime", "book", "manga", "drama", "video"]),
+    type: z.enum(ContentType),
+    durationMode: z.enum(["calculated", "manual"]),
+    progressUnit: z.enum(["page", "chapter"]),
     language: z.string().min(1, "Choose a language."),
     title: z
       .string()
@@ -107,7 +127,9 @@ export const sessionEntrySchema = z
         issue("time", "Choose a time that is not in the future.");
       }
     }
-    if (usesManualDuration(entry.type)) {
+    const manualDuration =
+      usesManualDuration(entry.type) || entry.durationMode === "manual";
+    if (manualDuration) {
       if (!isUnsignedIntegerInRange(entry.hours, 0))
         issue("hours", "Enter a whole number of hours, zero or more.");
       if (!isUnsignedIntegerInRange(entry.minutes, 0, 59))
@@ -115,7 +137,7 @@ export const sessionEntrySchema = z
       const seconds = Number(entry.hours) * 3600 + Number(entry.minutes) * 60;
       if (!Number.isSafeInteger(seconds) || seconds <= 0)
         issue("minutes", "Enter a positive duration.");
-      if (isReading(entry.type) && (entry.pageStart || entry.pageEnd)) {
+      if (supportsProgress(entry.type) && (entry.pageStart || entry.pageEnd)) {
         if (!isUnsignedIntegerInRange(entry.pageStart, 1))
           issue("pageStart", "Enter a positive starting page.");
         if (
@@ -127,25 +149,28 @@ export const sessionEntrySchema = z
             "Enter an ending page at or after the starting page.",
           );
       }
-    } else {
+    }
+    if (usesEpisodeProgress(entry.type)) {
       const range = episodeRange(entry.episodes);
-      if (!range)
+      if ((!range && !manualDuration) || (entry.episodes.trim() && !range))
         issue(
           "episodes",
           "Enter an episode number or range, such as 4 or 61–64.",
         );
       const duration = Number(entry.episodeMinutes);
       if (
-        !entry.episodeMinutes.trim() ||
-        !Number.isFinite(duration) ||
-        duration <= 0 ||
-        !Number.isSafeInteger(duration * 60)
+        !manualDuration &&
+        (!entry.episodeMinutes.trim() ||
+          !Number.isFinite(duration) ||
+          duration <= 0 ||
+          !Number.isSafeInteger(duration * 60))
       )
         issue(
           "episodeMinutes",
           "Enter a positive duration in minutes, precise to whole seconds.",
         );
       else if (
+        !manualDuration &&
         range &&
         !Number.isSafeInteger((range.end - range.start + 1) * duration * 60)
       )
@@ -158,23 +183,29 @@ export function sessionPayload(
   content: string,
 ): CreateImmersionSessionDto {
   const data = sessionEntrySchema.parse(entry);
-  if (usesManualDuration(data.type)) {
+  const manualDuration =
+    usesManualDuration(data.type) || data.durationMode === "manual";
+  const progressRange = usesEpisodeProgress(data.type)
+    ? episodeRange(data.episodes)
+    : undefined;
+  if (manualDuration) {
+    const progress: SessionProgressDto | undefined = progressRange
+      ? { unit: "episode", ...progressRange }
+      : supportsProgress(data.type) && data.pageStart && data.pageEnd
+        ? {
+            unit: data.progressUnit,
+            start: Number(data.pageStart),
+            end: Number(data.pageEnd),
+          }
+        : undefined;
     return {
       content,
       created_at: dateTimeInputToTimestamp(data.date, data.time),
       duration: Number(data.hours) * 3600 + Number(data.minutes) * 60,
-      ...(isReading(data.type) && data.pageStart && data.pageEnd
-        ? {
-            progress: {
-              unit: "page" as const,
-              start: Number(data.pageStart),
-              end: Number(data.pageEnd),
-            },
-          }
-        : {}),
+      ...(progress ? { progress } : {}),
     };
   }
-  const range = episodeRange(data.episodes)!;
+  const range = progressRange!;
   const duration = episodeDurationSeconds(range, Number(data.episodeMinutes))!;
   return {
     content,

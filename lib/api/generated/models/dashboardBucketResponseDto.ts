@@ -13,4 +13,6 @@ export interface DashboardBucketResponseDto {
   reading_time: number;
   /** Audiovisual duration in seconds */
   audiovisual_time: number;
+  /** Audio duration in seconds */
+  audio_time: number;
 }

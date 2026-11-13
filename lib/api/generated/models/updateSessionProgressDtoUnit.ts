@@ -12,4 +12,5 @@ export type UpdateSessionProgressDtoUnit = typeof UpdateSessionProgressDtoUnit[k
 export const UpdateSessionProgressDtoUnit = {
   episode: 'episode',
   page: 'page',
+  chapter: 'chapter',
 } as const;

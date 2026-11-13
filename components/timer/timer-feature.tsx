@@ -15,6 +15,7 @@ import { Check, ChevronDown, Play, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ContentPicker, type ContentChoice } from "@/components/content-picker";
+import { ContentTypeSelector } from "@/components/content-type-selector";
 import { QueryError } from "@/components/error/query-error";
 import { LanguageDropdown } from "@/components/language-dropdown";
 import { Button } from "@/components/shadcn/button";
@@ -27,10 +28,7 @@ import {
   DialogTitle,
 } from "@/components/shadcn/dialog";
 import { Skeleton } from "@/components/shadcn/skeleton";
-import {
-  sessionMediaStyles,
-  SessionTypeIcon,
-} from "@/components/session-media";
+import { sessionMediaStyles } from "@/components/session-media";
 import {
   getDashboardStatisticsQueryKey,
   getImmersionSessionHistoryQueryKey,
@@ -51,13 +49,6 @@ import { formatDuration } from "@/lib/duration";
 import { isServerError } from "@/lib/query-options";
 import { showMutationError } from "@/lib/mutation-error";
 
-const contentTypes: { type: CreateContentDtoType; label: string }[] = [
-  { type: "anime", label: "Anime" },
-  { type: "book", label: "Book" },
-  { type: "manga", label: "Manga" },
-  { type: "drama", label: "Drama" },
-  { type: "video", label: "YouTube" },
-];
 const titleSchema = z
   .string()
   .trim()
@@ -495,30 +486,16 @@ export function TimerFeature({
               <legend className="mb-2 text-xs text-muted-foreground">
                 Content type
               </legend>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {contentTypes.map((item) => (
-                  <button
-                    key={item.type}
-                    type="button"
-                    aria-pressed={type === item.type}
-                    onClick={() => {
-                      setType(item.type);
-                      setTitle("");
-                      setSelected(null);
-                      leaveContentPreset();
-                      setError("");
-                    }}
-                    className={`flex h-16 items-center justify-center gap-2 rounded-xl border text-xs font-semibold focus-visible:outline-2 focus-visible:outline-primary ${type === item.type ? "border-primary bg-[#e8f4ee] text-primary" : "border-border bg-[#f9fbfa]"}`}
-                  >
-                    <SessionTypeIcon
-                      type={item.type}
-                      aria-hidden="true"
-                      className="size-4"
-                    />
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              <ContentTypeSelector
+                type={type}
+                onTypeChange={(value) => {
+                  setType(value);
+                  setTitle("");
+                  setSelected(null);
+                  leaveContentPreset();
+                  setError("");
+                }}
+              />
             </fieldset>
             {loadingLanguageSettings ? (
               <div role="status" aria-label="Loading language preferences">
