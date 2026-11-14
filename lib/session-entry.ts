@@ -190,12 +190,13 @@ export function sessionPayload(
     : undefined;
   if (manualDuration) {
     const progress: SessionProgressDto | undefined = progressRange
-      ? { unit: "episode", ...progressRange }
+      ? { unit: "episode", ...progressRange, auto: false }
       : supportsProgress(data.type) && data.pageStart && data.pageEnd
         ? {
             unit: data.progressUnit,
             start: Number(data.pageStart),
             end: Number(data.pageEnd),
+            auto: false,
           }
         : undefined;
     return {
@@ -211,6 +212,6 @@ export function sessionPayload(
     content,
     created_at: dateTimeInputToTimestamp(data.date, data.time),
     duration,
-    progress: { unit: "episode", ...range },
+    progress: { unit: "episode", ...range, auto: true },
   };
 }

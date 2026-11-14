@@ -8,6 +8,8 @@
 import type { UpdateSessionProgressDtoUnit } from './updateSessionProgressDtoUnit';
 
 export interface UpdateSessionProgressDto {
+  /** Whether the session duration was automatically calculated from this progress */
+  auto?: boolean;
   /** @minimum 1 */
   start: number;
   /** @minimum 1 */
