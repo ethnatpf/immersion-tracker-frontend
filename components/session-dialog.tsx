@@ -256,7 +256,10 @@ export function SessionDialog({
     requireEpisodeProgress || sessionProgress?.unit === "episode";
   const id = useId().replaceAll(":", "");
   const [values, setValues] = useState(() => initialValues(session));
-  const [manualDuration, setManualDuration] = useState(() => !supportsEpisodes);
+  const [manualDuration, setManualDuration] = useState(() =>
+    !supportsEpisodes ||
+    (!requireEpisodeProgress && sessionProgress?.auto !== true),
+  );
   const [progressUnit, setProgressUnit] = useState<ReadingProgressUnit>(() =>
     session.type === "audiobook" || session.progress?.unit === "chapter"
       ? "chapter"
@@ -381,7 +384,7 @@ export function SessionDialog({
         duration = episodeDuration;
         data.duration = duration;
       }
-      data.progress = { unit: "episode", ...range };
+      data.progress = { unit: "episode", ...range, auto: !manualDuration };
     } else if (
       supportsProgress &&
       pageResult.data.pageStart.trim() &&
@@ -391,6 +394,7 @@ export function SessionDialog({
         unit: progressUnit,
         start: Number(pageResult.data.pageStart),
         end: Number(pageResult.data.pageEnd),
+        auto: false,
       };
     }
     setSaving(true);

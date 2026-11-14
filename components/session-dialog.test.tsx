@@ -6,6 +6,76 @@ import { dateInputToTimestamp } from "@/lib/date";
 import { renderWithQuery } from "@/test/render";
 
 describe("session dialog", () => {
+  it.each(["anime", "podcast", "drama"] as const)(
+    "opens an existing %s session without progress in manual duration mode and preserves its duration when progress is added",
+    async (type) => {
+      const user = userEvent.setup();
+      const onSave = vi.fn(async () => {});
+      renderWithQuery(
+        <SessionDialog
+          session={{
+            type,
+            title: `Existing ${type}`,
+            created_at: dateInputToTimestamp("2026-10-24"),
+            duration: 3000,
+          }}
+          open
+          onOpenChange={vi.fn()}
+          title="Edit session"
+          saveLabel="Save changes"
+          onSave={onSave}
+        />,
+      );
+
+      expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(50);
+      expect(
+        screen.getByRole("button", { name: "Use calculated time" }),
+      ).toBeVisible();
+      await user.type(
+        screen.getByRole("textbox", {
+          name: type === "podcast" ? "Episodes listened" : "Episodes watched",
+        }),
+        "2–3",
+      );
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      await waitFor(() =>
+        expect(onSave).toHaveBeenCalledWith({
+          created_at: dateInputToTimestamp("2026-10-24"),
+          duration: 3000,
+          progress: { unit: "episode", start: 2, end: 3, auto: false },
+        }),
+      );
+    },
+  );
+
+  it.each(["anime", "podcast", "drama"] as const)(
+    "keeps an existing %s session with manual progress in manual duration mode",
+    (type) => {
+      renderWithQuery(
+        <SessionDialog
+          session={{
+            type,
+            title: `Existing ${type}`,
+            created_at: dateInputToTimestamp("2026-10-24"),
+            duration: 3000,
+            progress: { unit: "episode", start: 2, end: 3, auto: false },
+          }}
+          open
+          onOpenChange={vi.fn()}
+          title="Edit session"
+          saveLabel="Save changes"
+          onSave={vi.fn(async () => {})}
+        />,
+      );
+
+      expect(screen.getByRole("spinbutton", { name: "Minutes" })).toHaveValue(50);
+      expect(
+        screen.getByRole("button", { name: "Use calculated time" }),
+      ).toBeVisible();
+    },
+  );
+
   it("uses the default episode duration for a new anime session", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn(async () => {});
@@ -34,7 +104,7 @@ describe("session dialog", () => {
       expect(onSave).toHaveBeenCalledWith({
         created_at: dateInputToTimestamp("2026-10-24"),
         duration: 1440,
-        progress: { unit: "episode", start: 12, end: 12 },
+        progress: { unit: "episode", start: 12, end: 12, auto: true },
       }),
     );
   });
@@ -49,7 +119,7 @@ describe("session dialog", () => {
           title: "Existing anime",
           created_at: dateInputToTimestamp("2026-10-24"),
           duration: 2880,
-          progress: { unit: "episode", start: 2, end: 3 },
+          progress: { unit: "episode", start: 2, end: 3, auto: true },
         }}
         open
         onOpenChange={vi.fn()}
@@ -70,7 +140,7 @@ describe("session dialog", () => {
       expect(onSave).toHaveBeenCalledWith({
         created_at: dateInputToTimestamp("2026-10-24"),
         duration: 3000,
-        progress: { unit: "episode", start: 2, end: 3 },
+        progress: { unit: "episode", start: 2, end: 3, auto: false },
       }),
     );
   });
@@ -120,7 +190,7 @@ describe("session dialog", () => {
           title: "Existing anime",
           created_at: dateInputToTimestamp("2026-10-24"),
           duration: 2880,
-          progress: { unit: "episode", start: 2, end: 3 },
+          progress: { unit: "episode", start: 2, end: 3, auto: true },
         }}
         open
         onOpenChange={vi.fn()}
@@ -149,7 +219,7 @@ describe("session dialog", () => {
       expect(onSave).toHaveBeenCalledWith({
         created_at: dateInputToTimestamp("2026-10-24"),
         duration: 3600,
-        progress: { unit: "episode", start: 2, end: 3 },
+        progress: { unit: "episode", start: 2, end: 3, auto: true },
       }),
     );
   });
@@ -181,7 +251,7 @@ describe("session dialog", () => {
       expect(onSave).toHaveBeenCalledWith({
         created_at: dateInputToTimestamp("2026-10-24"),
         duration: 3600,
-        progress: { unit: "chapter", start: 4, end: 6 },
+        progress: { unit: "chapter", start: 4, end: 6, auto: false },
       }),
     );
   });
@@ -217,7 +287,7 @@ describe("session dialog", () => {
       expect(onSave).toHaveBeenCalledWith({
         created_at: dateInputToTimestamp("2026-10-24"),
         duration: 3600,
-        progress: { unit: "chapter", start: 21, end: 30 },
+        progress: { unit: "chapter", start: 21, end: 30, auto: false },
       }),
     );
   });

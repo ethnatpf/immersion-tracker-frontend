@@ -63,7 +63,7 @@ describe("session entry", () => {
       content: "existing",
       created_at: dateInputToTimestamp("2026-01-01"),
       duration: 5760,
-      progress: { unit: "episode", start: 61, end: 64 },
+      progress: { unit: "episode", start: 61, end: 64, auto: true },
     });
     expect(episodeRange(" 61 - 64 ")).toEqual({ start: 61, end: 64 });
     expect(episodeDurationSeconds({ start: 2, end: 4 }, 25.5)).toBe(4590);
@@ -108,7 +108,7 @@ describe("session entry", () => {
     expect(
       sessionPayload({ ...reading, pageStart: "156", pageEnd: "188" }, "novel")
         .progress,
-    ).toEqual({ unit: "page", start: 156, end: 188 });
+    ).toEqual({ unit: "page", start: 156, end: 188, auto: false });
   });
   it("logs chapter progress for books and audiobooks without deriving duration", () => {
     const book = {

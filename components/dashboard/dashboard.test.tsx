@@ -283,7 +283,7 @@ describe("dashboard", () => {
         ...history.items[0],
         type: "anime" as const,
         duration: 2880,
-        progress: { unit: "episode" as const, start: 2, end: 3 },
+        progress: { unit: "episode" as const, start: 2, end: 3, auto: true },
       }],
     };
     let updateBody: unknown;
@@ -309,7 +309,7 @@ describe("dashboard", () => {
               type: "anime",
               created_at: "2026-10-23T00:00:00.000Z",
               duration: 5400,
-              progress: { unit: "episode", start: 2, end: 4 },
+              progress: { unit: "episode", start: 2, end: 4, auto: true },
             },
           ],
         };
@@ -340,7 +340,7 @@ describe("dashboard", () => {
       expect(updateBody).toEqual({
         created_at: new Date(history.items[0].created_at).toISOString(),
         duration: 5400,
-        progress: { unit: "episode", start: 2, end: 4 },
+        progress: { unit: "episode", start: 2, end: 4, auto: true },
       }),
     );
     expect(await within(recent).findByText("01:30:00")).toBeVisible();
@@ -354,7 +354,7 @@ describe("dashboard", () => {
       ...history,
       items: [{
         ...history.items[0],
-        progress: { unit: "page", start: 156, end: 188 },
+        progress: { unit: "page", start: 156, end: 188, auto: false },
       }],
     }), http.patch("*/immersion-session/:id", async ({ request }) => {
       updateBody = await request.json();
@@ -392,7 +392,7 @@ describe("dashboard", () => {
           "14:35",
         ),
         duration: 6300,
-        progress: { unit: "page", start: 160, end: 188 },
+        progress: { unit: "page", start: 160, end: 188, auto: false },
       }),
     );
     expect(screen.queryByRole("dialog", { name: "Edit session" })).not.toBeInTheDocument();
