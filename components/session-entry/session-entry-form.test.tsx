@@ -35,7 +35,6 @@ const content: ContentResponseDto = {
   title: "Kitchen",
   language: "language-ja",
   type: "book",
-  completed: false,
   user_id: "reader",
 };
 const saved: ImmersionSessionResponseDto = {

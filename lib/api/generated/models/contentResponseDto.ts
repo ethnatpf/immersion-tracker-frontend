@@ -16,6 +16,5 @@ export interface ContentResponseDto {
   user_id: string;
   /** Language ID */
   language: string;
-  completed: boolean;
   url?: string;
 }

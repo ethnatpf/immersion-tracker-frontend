@@ -13,7 +13,6 @@ export interface ContentDetailsResponseDto {
   id: string;
   title: string;
   type: ContentDetailsResponseDtoType;
-  completed: boolean;
   /** Total immersion duration in seconds */
   totalTimeSpent: number;
   /** @nullable */

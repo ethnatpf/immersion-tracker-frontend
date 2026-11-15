@@ -5,11 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   CalendarDays,
-  Check,
   ChevronDown,
   Clock3,
   Plus,
-  RotateCcw,
   Timer,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,7 +16,6 @@ import {
   getDashboardStatisticsQueryKey,
   getImmersionSessionHistoryQueryKey,
   useContentDetails,
-  useContentUpdate,
   useImmersionSessionCreate,
   useImmersionSessionHistory,
 } from "@/lib/api/generated/immersion";
@@ -273,35 +270,9 @@ export function ContentDetail({ contentId }: { contentId: string }) {
     { content: contentId, page, limit: PAGE_SIZE },
     { query: { retry: false, enabled: !!content.data } },
   );
-  const updateContent = useContentUpdate({ mutation: { retry: false } });
   const createSession = useImmersionSessionCreate({
     mutation: { retry: false },
   });
-
-  async function setCompleted(completed: boolean) {
-    if (!content.data || updateContent.isPending) return;
-    try {
-      await updateContent.mutateAsync({
-        id: contentId,
-        data: { completed },
-      });
-      await Promise.all([
-        client.invalidateQueries({
-          queryKey: getContentDetailsQueryKey(contentId),
-        }),
-        client.invalidateQueries({
-          queryKey: getImmersionSessionHistoryQueryKey(),
-        }),
-      ]);
-      toast.success(
-        completed
-          ? "Content marked as completed"
-          : "Content moved back to in progress",
-      );
-    } catch {
-      // Shared mutation defaults show recoverable failures and route server errors to the boundary.
-    }
-  }
 
   async function logSession(data: SessionDialogSubmission) {
     await createSession.mutateAsync({
@@ -366,13 +337,6 @@ export function ContentDetail({ contentId }: { contentId: string }) {
       <section className="md:pt-[52px]">
         <div className="flex flex-wrap items-center gap-2">
           <ContentBadge content={details} />
-          <span className="inline-flex items-center gap-2 rounded-md bg-[#e8f4ee] px-2.5 py-1.5 text-xs font-medium text-[#167d68]">
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-[#167d68]"
-            />
-            {details.completed ? "Completed" : "In progress"}
-          </span>
         </div>
         <h1 className="mt-4 break-words text-[27px] font-semibold leading-tight tracking-tight md:mt-5 md:text-[36px]">
           {details.title}
@@ -399,35 +363,6 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           >
             <Timer aria-hidden="true" className="size-4 text-primary" />
             Start timer
-          </Button>
-          <Button
-            aria-label={
-              updateContent.isPending
-                ? "Saving completion status"
-                : `Mark ${details.type} as ${details.completed ? "in progress" : "completed"}`
-            }
-            onClick={() => void setCompleted(!details.completed)}
-            disabled={updateContent.isPending}
-            variant="outline"
-            className="order-3 h-12 gap-2 rounded-lg bg-white px-2 text-[13px] font-semibold sm:px-4 sm:text-sm md:order-1"
-          >
-            {details.completed ? (
-              <RotateCcw aria-hidden="true" className="size-4 text-primary" />
-            ) : (
-              <Check aria-hidden="true" className="size-4 text-primary" />
-            )}
-            {updateContent.isPending ? (
-              "Saving…"
-            ) : (
-              <>
-                <span className="md:hidden">
-                  Mark {details.completed ? "in progress" : "completed"}
-                </span>
-                <span className="hidden md:inline">
-                  Mark {details.type} as {details.completed ? "in progress" : "completed"}
-                </span>
-              </>
-            )}
           </Button>
         </div>
       </section>
