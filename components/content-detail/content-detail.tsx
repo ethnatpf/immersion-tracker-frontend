@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ChevronDown,
   Clock3,
+  ExternalLink,
   Plus,
   Timer,
 } from "lucide-react";
@@ -29,7 +30,7 @@ import { sessionMediaStyles } from "@/components/session-media";
 import { SessionActions } from "@/components/session-actions";
 import { SessionDialog, type SessionDialogSubmission } from "@/components/session-dialog";
 import { QueryError } from "@/components/error/query-error";
-import { Button } from "@/components/shadcn/button";
+import { Button, buttonVariants } from "@/components/shadcn/button";
 import { Card } from "@/components/shadcn/card";
 import { Skeleton } from "@/components/shadcn/skeleton";
 import {
@@ -335,8 +336,23 @@ export function ContentDetail({ contentId }: { contentId: string }) {
   return (
     <div className="space-y-6 pb-8 text-foreground">
       <section className="md:pt-[52px]">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <ContentBadge content={details} />
+          {details.url && (
+            <a
+              href={details.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({
+                variant: "outline",
+                className:
+                  "h-10 shrink-0 gap-2 rounded-lg border-border bg-white px-3 text-sm font-medium text-primary hover:bg-white/80 hover:text-primary",
+              })}
+            >
+              View source
+              <ExternalLink aria-hidden="true" className="size-4" />
+            </a>
+          )}
         </div>
         <h1 className="mt-4 break-words text-[27px] font-semibold leading-tight tracking-tight md:mt-5 md:text-[36px]">
           {details.title}
