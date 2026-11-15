@@ -2,10 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Toaster } from "@/components/shadcn/sonner";
 import {
   getContentDetailsMockHandler,
-  getContentUpdateMockHandler,
   getImmersionSessionCreateMockHandler,
   getImmersionSessionHistoryMockHandler,
 } from "@/lib/api/generated/immersion.msw";
@@ -27,7 +25,6 @@ const details: ContentDetailsResponseDto = {
   id: "book-1",
   title: "A Japanese novel",
   type: "book",
-  completed: false,
   totalTimeSpent: 45900,
   lastImmersionSession: {
     id: "session-1",
@@ -336,65 +333,6 @@ describe("ContentDetail", () => {
       ).not.toBeInTheDocument();
     },
   );
-
-  it("toggles completion in both directions and refreshes the content details", async () => {
-    const user = userEvent.setup();
-    const updateBodies: unknown[] = [];
-    let isCompleted = false;
-    server.use(
-      getContentDetailsMockHandler(() => ({
-        ...details,
-        completed: isCompleted,
-      })),
-      getImmersionSessionHistoryMockHandler({
-        items: [],
-        total: 0,
-        page: 1,
-        limit: 5,
-      }),
-      getContentUpdateMockHandler(async ({ request }) => {
-        const body = await request.json();
-        updateBodies.push(body);
-        isCompleted = Boolean((body as { completed: boolean }).completed);
-        return {
-          _id: details.id,
-          title: details.title,
-          type: details.type,
-          user_id: "reader",
-          language: "ja",
-          completed: isCompleted,
-        };
-      }),
-    );
-
-    renderWithQuery(
-      <>
-        <ContentDetail contentId="book-1" />
-        <Toaster />
-      </>,
-    );
-    await user.click(
-      await screen.findByRole("button", { name: "Mark book as completed" }),
-    );
-
-    await waitFor(() => expect(updateBodies).toEqual([{ completed: true }]));
-    expect(await screen.findByText("Completed")).toBeVisible();
-    expect(
-      await screen.findByText("Content marked as completed"),
-    ).toBeVisible();
-
-    await user.click(
-      screen.getByRole("button", { name: "Mark book as in progress" }),
-    );
-
-    await waitFor(() =>
-      expect(updateBodies).toEqual([{ completed: true }, { completed: false }]),
-    );
-    expect(await screen.findByText("In progress")).toBeVisible();
-    expect(
-      await screen.findByText("Content moved back to in progress"),
-    ).toBeVisible();
-  });
 
   it("shows an empty state when content has no immersion sessions", async () => {
     server.use(

@@ -109,7 +109,6 @@ beforeEach(() => {
         title: "New book",
         type: "book",
         language: "language-ja",
-        completed: false,
         user_id: "reader",
       };
     }),

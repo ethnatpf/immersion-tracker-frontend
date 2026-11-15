@@ -9,6 +9,5 @@
 export interface UpdateContentDto {
   /** @maxLength 350 */
   title?: string;
-  completed?: boolean;
   language?: string;
 }
