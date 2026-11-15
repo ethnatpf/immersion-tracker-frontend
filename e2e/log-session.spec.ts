@@ -119,7 +119,7 @@ for (const viewport of [
       await expect(page).toHaveURL("/");
       await expect(
         page.getByRole("region", { name: "Total immersion", exact: true }),
-      ).toContainText(/\d+:\d{2}:\d{2}/);
+      ).toContainText(/(?:\d+h(?:\d+m)?|\d+m)/);
       await page.goto("/history");
       await page.getByLabel("Search titles").fill(animeTitle);
       await expect(

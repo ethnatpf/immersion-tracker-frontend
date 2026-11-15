@@ -22,10 +22,11 @@ import type {
 } from "@/lib/api/generated/models";
 import {
   bucketLabel,
-  dailyMediaAverage,
+  bucketTooltipLabel,
+  mediaAverage,
   type MediaTime,
 } from "@/lib/dashboard";
-import { formatDuration, formatHours } from "@/lib/duration";
+import { formatHoursMinutes } from "@/lib/duration";
 
 const rangeLabels: Record<DashboardStatisticsRange, string> = {
   week: "Weekly view",
@@ -34,16 +35,28 @@ const rangeLabels: Record<DashboardStatisticsRange, string> = {
   total: "All time",
 };
 
+const averageLabels: Record<
+  DashboardStatisticsRange,
+  { label: string; unit: string }
+> = {
+  week: { label: "Daily average", unit: "day" },
+  month: { label: "Weekly average", unit: "week" },
+  year: { label: "Monthly average", unit: "month" },
+  total: { label: "Yearly average", unit: "year" },
+};
+
 export function MediaBreakdown({
   stats,
   media,
   language,
   range,
+  timeZone,
 }: {
   stats: DashboardStatisticsResponseDto;
   media: MediaTime;
   language: string;
   range: DashboardStatisticsRange;
+  timeZone: string;
 }) {
   const reading = media === "reading_time";
   const title = reading ? "Reading media breakdown" : "Audio media breakdown";
@@ -57,7 +70,8 @@ export function MediaBreakdown({
     seconds: bucket[media],
   }));
   const maximum = Math.max(...data.map((bucket) => bucket.hours), 0);
-  const average = dailyMediaAverage(stats, media);
+  const average = mediaAverage(stats, media, range, timeZone);
+  const averageLabel = averageLabels[range];
   const headingId = `${media}-heading`;
   return (
     <Card
@@ -97,17 +111,17 @@ export function MediaBreakdown({
       </p>
       <div className="mb-2 mt-5 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[11px] text-muted-foreground">Daily average</p>
+          <p className="text-[11px] text-muted-foreground">{averageLabel.label}</p>
           <p
             className="mt-1 text-[25px] font-semibold leading-8"
             style={{ color }}
           >
-            {formatHours(average)}
-            <span className="text-lg"> / day</span>
+            {formatHoursMinutes(average)}
+            <span className="text-lg"> / {averageLabel.unit}</span>
           </p>
         </div>
         <p className="pb-1 text-[10px] text-muted-foreground">
-          {formatHours(stats[media])} in this period
+          {formatHoursMinutes(stats[media])} in this period
         </p>
       </div>
       {maximum > 0 ? (
@@ -138,10 +152,15 @@ export function MediaBreakdown({
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(_, payload) => payload[0]?.payload?.date}
+                    labelFormatter={(_, payload) => {
+                      const bucket = payload[0]?.payload;
+                      return bucket
+                        ? bucketTooltipLabel(bucket.date, range)
+                        : "";
+                    }}
                     formatter={(_, __, item) => (
                       <span className="font-medium tabular-nums">
-                        {formatDuration(item.payload.seconds)}
+                        {formatHoursMinutes(item.payload.seconds)}
                       </span>
                     )}
                   />
@@ -164,7 +183,7 @@ export function MediaBreakdown({
                     dataKey="hours"
                     position="top"
                     offset={8}
-                    formatter={(value) => `${Number(value).toFixed(1)}h`}
+                    formatter={(value) => formatHoursMinutes(Number(value) * 3600)}
                     className="fill-muted-foreground text-[10px]"
                   />
                 )}
@@ -183,7 +202,7 @@ export function MediaBreakdown({
               {data.map((bucket) => (
                 <tr key={bucket.date}>
                   <th scope="row">{bucket.date}</th>
-                  <td>{formatDuration(bucket.seconds)}</td>
+                  <td>{formatHoursMinutes(bucket.seconds)}</td>
                 </tr>
               ))}
             </tbody>
@@ -201,7 +220,7 @@ export function MediaBreakdown({
           style={{ backgroundColor: color }}
         />
         <span className="truncate">{language}</span>
-        <span className="shrink-0">{formatHours(average)} / day</span>
+        <span className="shrink-0">{formatHoursMinutes(average)} / {averageLabel.unit}</span>
       </div>
     </Card>
   );

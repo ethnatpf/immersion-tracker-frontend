@@ -23,7 +23,7 @@ import type {
   DashboardStatisticsRange,
   DashboardStatisticsResponseDto,
 } from "@/lib/api/generated/models";
-import { formatDuration, formatHours } from "@/lib/duration";
+import { formatHoursMinutes } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/shadcn/button";
 import { Card } from "@/components/shadcn/card";
@@ -89,17 +89,19 @@ function Statistics({
   stats,
   language,
   range,
+  timeZone,
 }: {
   stats: DashboardStatisticsResponseDto;
   language: string;
   range: DashboardStatisticsRange;
+  timeZone: string;
 }) {
   return (
     <>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 xl:gap-4">
         <Metric
           label="Total immersion"
-          value={formatDuration(stats.total_immersion_time)}
+          value={formatHoursMinutes(stats.total_immersion_time)}
           icon={Clock}
         />
         <Metric
@@ -111,18 +113,18 @@ function Statistics({
         />
         <Metric
           label="Reading time"
-          value={formatHours(stats.reading_time)}
+          value={formatHoursMinutes(stats.reading_time)}
           icon={BookOpen}
           tone="blue"
         />
         <Metric
           label="Audiovisual time"
-          value={formatHours(stats.audiovisual_time)}
+          value={formatHoursMinutes(stats.audiovisual_time)}
           icon={SquarePlay}
         />
         <Metric
           label="Audio time"
-          value={formatHours(stats.audio_time)}
+          value={formatHoursMinutes(stats.audio_time)}
           icon={Headphones}
           tone="blue"
         />
@@ -132,12 +134,14 @@ function Statistics({
           stats={stats}
           language={language}
           range={range}
+          timeZone={timeZone}
           media="audiovisual_time"
         />
         <MediaBreakdown
           stats={stats}
           language={language}
           range={range}
+          timeZone={timeZone}
           media="reading_time"
         />
       </div>
@@ -290,6 +294,7 @@ export function Dashboard() {
           stats={statistics.data}
           language={activeLanguage.name}
           range={range}
+          timeZone={timeZone ?? "UTC"}
         />
       )}
       <RecentSessions />

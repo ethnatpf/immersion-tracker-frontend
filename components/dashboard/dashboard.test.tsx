@@ -65,22 +65,28 @@ describe("dashboard", () => {
   it("loads the preferred language and binds metrics, charts, and recent sessions to the SDK responses", async () => {
     renderWithQuery(<Dashboard />);
     const total = await screen.findByRole("region", { name: "Total immersion" });
-    expect(within(total).getByText("483:15:00")).toBeVisible();
+    expect(within(total).getByText("483h15m")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "Current streak" })).getByText("42")).toBeVisible();
-    expect(within(screen.getByRole("region", { name: "Reading time" })).getByText("1.0h")).toBeVisible();
-    expect(within(screen.getByRole("region", { name: "Audio time" })).getByText("1.0h")).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Reading time" })).getByText("1h")).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Audio time" })).getByText("1h")).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Dashboard language" })).toHaveTextContent("Spanish");
     expect(statisticsRequests[0].searchParams.get("language")).toBe("es");
     expect(statisticsRequests[0].searchParams.get("range")).toBe("week");
     expect(statisticsRequests[0].searchParams.get("timezone")).toBe(getUserTimeZone());
     expect(statisticsRequests[0].pathname).toBe("/api/backend/dashboard/statistics");
     const chart = screen.getByRole("region", { name: "Reading media breakdown" });
-    expect(within(chart).getByRole("table", { name: "Reading media breakdown data", hidden: true })).toHaveTextContent("00:30:00");
+    expect(within(chart).getByRole("table", { name: "Reading media breakdown data", hidden: true })).toHaveTextContent("30m");
     const recent = await screen.findByRole("table", { name: "Recent immersion sessions" });
     expect(within(recent).getByText("A Japanese novel")).toBeVisible();
-    expect(within(recent).getByText("01:45:00")).toBeVisible();
+    expect(within(recent).getByText("1h45m")).toBeVisible();
     expect(within(recent).getByText(formatUserDateTime(history.items[0].created_at))).toBeVisible();
     expect(screen.getByRole("link", { name: "View complete history" })).toHaveAttribute("href", "/history");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "Total" }));
+    const readingChart = screen.getByRole("region", { name: "Reading media breakdown" });
+    expect(await within(readingChart).findByText("Yearly average")).toBeVisible();
+    expect(within(readingChart).getByText("30m / year")).toBeVisible();
   });
 
   it("waits for user preferences before requesting statistics", async () => {
@@ -204,7 +210,7 @@ describe("dashboard", () => {
     expect(await screen.findByText("No reading immersion in this period.")).toBeVisible();
     expect(screen.getByText("No audiovisual immersion in this period.")).toBeVisible();
     expect(await screen.findByText("No immersion sessions yet. Your sessions will appear here.")).toBeVisible();
-    expect(within(screen.getByRole("region", { name: "Total immersion" })).getByText("00:00:00")).toBeVisible();
+    expect(within(screen.getByRole("region", { name: "Total immersion" })).getByText("0m")).toBeVisible();
     expect(screen.queryByRole("button", { name: /sessions page/ })).not.toBeInTheDocument();
   });
 
@@ -343,7 +349,7 @@ describe("dashboard", () => {
         progress: { unit: "episode", start: 2, end: 4, auto: true },
       }),
     );
-    expect(await within(recent).findByText("01:30:00")).toBeVisible();
+    expect(await within(recent).findByText("1h30m")).toBeVisible();
     expect(screen.queryByRole("dialog", { name: "Edit session" })).not.toBeInTheDocument();
   });
 
@@ -446,7 +452,7 @@ describe("dashboard", () => {
       within(menu).queryByRole("menuitem", { name: "View content" }),
     ).not.toBeInTheDocument();
     await user.keyboard("{Escape}");
-    await user.click(within(row).getByText("01:45:00"));
+    await user.click(within(row).getByText("1h45m"));
     expect(router.push).toHaveBeenCalledWith("/content/book-1");
   });
 
@@ -524,7 +530,7 @@ describe("dashboard", () => {
     server.use(getLanguageListMockHandler(languages), getUserPreferencesMockHandler({ preferred_language: "es" }), getDashboardStatisticsMockHandler(stats), getImmersionSessionHistoryMockHandler(history));
     await user.click(screen.getByRole("button", { name: "Try again" }));
     const total = await screen.findByRole("region", { name: "Total immersion" });
-    expect(within(total).getByText("483:15:00")).toBeVisible();
+    expect(within(total).getByText("483h15m")).toBeVisible();
     expect(await screen.findByRole("table", { name: "Recent immersion sessions" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Something went wrong" })).not.toBeInTheDocument();
   });
