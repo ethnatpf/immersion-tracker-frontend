@@ -7,7 +7,7 @@ import { useImmersionSessionHistory } from "@/lib/api/generated/immersion";
 import type {
   SessionHistoryItemResponseDtoType,
 } from "@/lib/api/generated/models";
-import { formatDuration } from "@/lib/duration";
+import { formatHoursMinutes } from "@/lib/duration";
 import { LocalizedDate } from "@/components/localized-date";
 import { Card } from "@/components/shadcn/card";
 import {
@@ -140,7 +140,7 @@ export function RecentSessions() {
                         </Link>
                       </TableCell>
                       <TableCell className="px-3 text-[13px] tabular-nums">
-                        {formatDuration(session.duration)}
+                    {formatHoursMinutes(session.duration)}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-muted-foreground">
                         <SessionDate date={session.created_at} />
@@ -180,7 +180,7 @@ export function RecentSessions() {
                   </h3>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="font-medium tabular-nums">
-                      {formatDuration(session.duration)}
+                      {formatHoursMinutes(session.duration)}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
                       <SessionDate date={session.created_at} />
