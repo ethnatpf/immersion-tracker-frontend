@@ -343,6 +343,68 @@ describe("ContentDetail", () => {
     },
   );
 
+  it("requires radio episode progress when logging from content detail", async () => {
+    const user = userEvent.setup();
+    let createBody: unknown;
+    server.use(
+      getContentDetailsMockHandler({ ...details, type: "radio" }),
+      getImmersionSessionHistoryMockHandler({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 5,
+      }),
+      getImmersionSessionCreateMockHandler(async ({ request }) => {
+        createBody = await request.json();
+        return {
+          _id: "new-radio-session",
+          content: "book-1",
+          language: "ja",
+          content_type: "radio",
+          user_id: "reader",
+          created_at: "2026-10-28T00:00:00.000Z",
+          duration: 1800,
+          progress: { unit: "episode", start: 1, end: 1 },
+        };
+      }),
+    );
+    renderWithQuery(<ContentDetail contentId="book-1" />);
+
+    await user.click(await screen.findByRole("button", { name: "Log new session" }));
+    const dialog = await screen.findByRole("dialog", { name: "Log new session" });
+    expect(
+      within(dialog).getByRole("textbox", { name: "Episodes listened" }),
+    ).toBeVisible();
+    expect(
+      within(dialog).getByRole("spinbutton", { name: "Episode duration" }),
+    ).toHaveValue(null);
+
+    await user.click(within(dialog).getByRole("button", { name: "Log session" }));
+    expect(
+      await within(dialog).findByText(
+        "Enter an episode number or range, such as 4 or 61–64.",
+      ),
+    ).toBeVisible();
+    expect(createBody).toBeUndefined();
+
+    await user.type(
+      within(dialog).getByRole("textbox", { name: "Episodes listened" }),
+      "1",
+    );
+    await user.type(
+      within(dialog).getByRole("spinbutton", { name: "Episode duration" }),
+      "30",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Log session" }));
+    await waitFor(() =>
+      expect(createBody).toMatchObject({
+        content: "book-1",
+        duration: 1800,
+        progress: { unit: "episode", start: 1, end: 1 },
+      }),
+    );
+  });
+
   it("shows an empty state when content has no immersion sessions", async () => {
     server.use(
       getContentDetailsMockHandler({ ...details, lastImmersionSession: null }),

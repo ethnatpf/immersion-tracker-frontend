@@ -579,7 +579,7 @@ function SessionFormBody({
                   <div>
                     {field(
                       "episodes",
-                      entry.type === "podcast"
+                      entry.type === "podcast" || entry.type === "radio"
                         ? "Episodes listened"
                         : "Episodes watched",
                       { type: "text", placeholder: "e.g. 4 or 61–64" },
@@ -595,7 +595,7 @@ function SessionFormBody({
                         "Episode duration (minutes)",
                         { min: 0, step: "any" },
                       )}
-                      {entry.type === "podcast" && (
+                      {(entry.type === "podcast" || entry.type === "radio") && (
                         <p className="mt-2 text-[11px] text-muted-foreground">
                           Enter the actual length of each episode.
                         </p>
@@ -627,22 +627,6 @@ function SessionFormBody({
                   )}
                 </div>
               )}
-              {usesEpisodeProgress(entry.type) && (
-                <button
-                  type="button"
-                  className="mt-4 text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline"
-                  onClick={() =>
-                    update(
-                      "durationMode",
-                      manualDuration ? "calculated" : "manual",
-                    )
-                  }
-                >
-                  {manualDuration
-                    ? "Use calculated time"
-                    : "Enter time manually"}
-                </button>
-              )}
               {manualDuration && (
                 <div className="mt-5">
                   <p className="mb-5 text-sm text-muted-foreground">
@@ -667,6 +651,22 @@ function SessionFormBody({
                     })}
                   </div>
                 </div>
+              )}
+              {usesEpisodeProgress(entry.type) && (
+                <button
+                  type="button"
+                  className="mt-4 text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline"
+                  onClick={() =>
+                    update(
+                      "durationMode",
+                      manualDuration ? "calculated" : "manual",
+                    )
+                  }
+                >
+                  {manualDuration
+                    ? "Use calculated time"
+                    : "Enter time manually"}
+                </button>
               )}
             </Section>
           </div>

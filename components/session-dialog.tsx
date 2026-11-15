@@ -528,7 +528,7 @@ export function SessionDialog({
                     className="block text-xs text-muted-foreground"
                     htmlFor={`session-dialog-episodes-${id}`}
                   >
-                    {session.type === "podcast"
+                    {session.type === "podcast" || session.type === "radio"
                       ? "Episodes listened"
                       : "Episodes watched"}
                   </label>
@@ -536,7 +536,7 @@ export function SessionDialog({
                     id={`session-dialog-episodes-${id}`}
                     name="episodes"
                     aria-label={
-                      session.type === "podcast"
+                      session.type === "podcast" || session.type === "radio"
                         ? "Episodes listened"
                         : "Episodes watched"
                     }
@@ -588,7 +588,9 @@ export function SessionDialog({
                       step="any"
                       value={episodeMinutesDraft}
                       placeholder={
-                        session.type === "podcast" ? undefined : "24"
+                        session.type === "podcast" || session.type === "radio"
+                          ? undefined
+                          : "24"
                       }
                       aria-invalid={!!errors.episodeMinutes}
                       aria-describedby={
@@ -619,15 +621,6 @@ export function SessionDialog({
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="text-left text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline sm:col-span-2"
-                  onClick={() => setManualDuration((current) => !current)}
-                >
-                  {manualDuration
-                    ? "Use calculated time"
-                    : "Enter time manually"}
-                </button>
               </div>
             ) : supportsProgress ? (
               <div
@@ -772,6 +765,17 @@ export function SessionDialog({
                   ))}
                 </div>
               </div>
+            )}
+            {supportsEpisodes && (
+              <button
+                type="button"
+                className="text-left text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline sm:col-span-2"
+                onClick={() => setManualDuration((current) => !current)}
+              >
+                {manualDuration
+                  ? "Use calculated time"
+                  : "Enter time manually"}
+              </button>
             )}
           </fieldset>
           <footer className="flex flex-col-reverse gap-3 border-t border-border px-6 py-4 sm:flex-row sm:justify-end">

@@ -1,4 +1,5 @@
 import { auth0 } from "@/lib/auth0";
+import { BACKEND_URL } from "@/lib/constants";
 import {
   AccessTokenError,
   AccessTokenErrorCode,
@@ -89,7 +90,7 @@ async function forward(
     );
   }
 
-  const baseUrl = process.env.API_URL ?? "http://localhost:4000";
+  const baseUrl = process.env.API_URL ?? BACKEND_URL;
   const upstreamUrl = new URL(`${baseUrl.replace(/\/$/, "")}/${endpoint}`);
   upstreamUrl.search = new URL(request.url).search;
 
