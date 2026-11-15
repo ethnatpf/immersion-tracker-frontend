@@ -714,7 +714,7 @@ describe("session entry form", () => {
     );
     expect(
       screen.getByRole("region", { name: "Total immersion" }),
-    ).toHaveTextContent("01:36:00");
+    ).toHaveTextContent("1h36m");
   });
   it("searches the backend and saves an existing title with calculated time", async () => {
     renderWithQuery(<SessionEntryForm />);

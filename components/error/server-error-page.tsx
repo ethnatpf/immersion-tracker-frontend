@@ -20,6 +20,9 @@ export function ServerErrorPage({ status, requestId, onRetry }: { status: number
           <Button onClick={onRetry} className="h-12 rounded-[10px] font-semibold md:w-[150px]">Try again</Button>
           <Link href="/" onNavigate={onRetry} className={cn(buttonVariants({ variant: "outline" }), "h-12 rounded-[10px] bg-white font-semibold md:w-[196px]")}>Back to dashboard</Link>
         </div>
+        <Link href="https://status.ethnatpf.com" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "link" }), "mx-auto mt-5 h-auto p-0 font-medium")}>
+          View service status
+        </Link>
         {requestId && <RequestId key={requestId} requestId={requestId} />}
       </Card>
     </div>
