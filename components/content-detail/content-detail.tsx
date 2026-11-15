@@ -5,11 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   CalendarDays,
-  Check,
   ChevronDown,
   Clock3,
+  ExternalLink,
   Plus,
-  RotateCcw,
   Timer,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,7 +17,6 @@ import {
   getDashboardStatisticsQueryKey,
   getImmersionSessionHistoryQueryKey,
   useContentDetails,
-  useContentUpdate,
   useImmersionSessionCreate,
   useImmersionSessionHistory,
 } from "@/lib/api/generated/immersion";
@@ -32,7 +30,7 @@ import { sessionMediaStyles } from "@/components/session-media";
 import { SessionActions } from "@/components/session-actions";
 import { SessionDialog, type SessionDialogSubmission } from "@/components/session-dialog";
 import { QueryError } from "@/components/error/query-error";
-import { Button } from "@/components/shadcn/button";
+import { Button, buttonVariants } from "@/components/shadcn/button";
 import { Card } from "@/components/shadcn/card";
 import { Skeleton } from "@/components/shadcn/skeleton";
 import {
@@ -133,12 +131,12 @@ function SummaryMetric({
   icon: typeof Clock3;
 }) {
   return (
-    <Card className="relative min-h-[124px] gap-0 rounded-2xl border border-border bg-white p-5 ring-0 md:min-h-[140px]">
+    <Card className="relative min-h-[124px] gap-0 rounded-2xl border border-border bg-white p-5 ring-0 md:min-h-[140px] md:justify-between">
       <p className="text-xs text-muted-foreground">{title}</p>
-      <p className="mt-4 pr-12 text-[30px] font-semibold leading-9 tracking-tight tabular-nums md:text-[32px]">
+      <p className="mt-2 pr-12 text-[30px] font-semibold leading-9 tracking-tight tabular-nums md:mt-0 md:text-[32px]">
         {value}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-1 text-xs text-muted-foreground md:mt-0">{detail}</p>
       <span className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-xl bg-[#e8f4ee] text-primary">
         <Icon aria-hidden="true" className="size-5" />
       </span>
@@ -273,35 +271,9 @@ export function ContentDetail({ contentId }: { contentId: string }) {
     { content: contentId, page, limit: PAGE_SIZE },
     { query: { retry: false, enabled: !!content.data } },
   );
-  const updateContent = useContentUpdate({ mutation: { retry: false } });
   const createSession = useImmersionSessionCreate({
     mutation: { retry: false },
   });
-
-  async function setCompleted(completed: boolean) {
-    if (!content.data || updateContent.isPending) return;
-    try {
-      await updateContent.mutateAsync({
-        id: contentId,
-        data: { completed },
-      });
-      await Promise.all([
-        client.invalidateQueries({
-          queryKey: getContentDetailsQueryKey(contentId),
-        }),
-        client.invalidateQueries({
-          queryKey: getImmersionSessionHistoryQueryKey(),
-        }),
-      ]);
-      toast.success(
-        completed
-          ? "Content marked as completed"
-          : "Content moved back to in progress",
-      );
-    } catch {
-      // Shared mutation defaults show recoverable failures and route server errors to the boundary.
-    }
-  }
 
   async function logSession(data: SessionDialogSubmission) {
     await createSession.mutateAsync({
@@ -364,15 +336,23 @@ export function ContentDetail({ contentId }: { contentId: string }) {
   return (
     <div className="space-y-6 pb-8 text-foreground">
       <section className="md:pt-[52px]">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <ContentBadge content={details} />
-          <span className="inline-flex items-center gap-2 rounded-md bg-[#e8f4ee] px-2.5 py-1.5 text-xs font-medium text-[#167d68]">
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-[#167d68]"
-            />
-            {details.completed ? "Completed" : "In progress"}
-          </span>
+          {details.url && (
+            <a
+              href={details.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({
+                variant: "outline",
+                className:
+                  "h-10 shrink-0 gap-2 rounded-lg border-border bg-white px-3 text-sm font-medium text-primary hover:bg-white/80 hover:text-primary",
+              })}
+            >
+              View source
+              <ExternalLink aria-hidden="true" className="size-4" />
+            </a>
+          )}
         </div>
         <h1 className="mt-4 break-words text-[27px] font-semibold leading-tight tracking-tight md:mt-5 md:text-[36px]">
           {details.title}
@@ -381,7 +361,7 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           <Button
             type="button"
             onClick={() => setLogSessionOpen(true)}
-            className="order-1 col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring md:order-3 md:col-span-1 md:px-5"
+            className="order-1 col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring md:col-span-1 md:px-5"
           >
             <Plus aria-hidden="true" className="size-[18px]" />
             Log new session
@@ -395,39 +375,10 @@ export function ContentDetail({ contentId }: { contentId: string }) {
                 type: details.type,
             }, { immediate: true })
             }
-            className="order-2 h-12 gap-2 rounded-lg bg-white px-2 text-[13px] font-semibold sm:px-4 sm:text-sm md:order-2 md:px-6"
+            className="order-2 col-span-2 h-12 gap-2 rounded-lg bg-white px-2 text-[13px] font-semibold sm:px-4 sm:text-sm md:col-span-1 md:px-6"
           >
             <Timer aria-hidden="true" className="size-4 text-primary" />
             Start timer
-          </Button>
-          <Button
-            aria-label={
-              updateContent.isPending
-                ? "Saving completion status"
-                : `Mark ${details.type} as ${details.completed ? "in progress" : "completed"}`
-            }
-            onClick={() => void setCompleted(!details.completed)}
-            disabled={updateContent.isPending}
-            variant="outline"
-            className="order-3 h-12 gap-2 rounded-lg bg-white px-2 text-[13px] font-semibold sm:px-4 sm:text-sm md:order-1"
-          >
-            {details.completed ? (
-              <RotateCcw aria-hidden="true" className="size-4 text-primary" />
-            ) : (
-              <Check aria-hidden="true" className="size-4 text-primary" />
-            )}
-            {updateContent.isPending ? (
-              "Saving…"
-            ) : (
-              <>
-                <span className="md:hidden">
-                  Mark {details.completed ? "in progress" : "completed"}
-                </span>
-                <span className="hidden md:inline">
-                  Mark {details.type} as {details.completed ? "in progress" : "completed"}
-                </span>
-              </>
-            )}
           </Button>
         </div>
       </section>
@@ -448,9 +399,15 @@ export function ContentDetail({ contentId }: { contentId: string }) {
               ? "Last read"
               : "Last session"
           }
-          value={lastSession ? <LocalizedDate date={lastSession.created_at} /> : "—"}
           detail={lastDetail}
           icon={CalendarDays}
+          value={
+            lastSession ? (
+              <LocalizedDate date={lastSession.created_at} dateOnly />
+            ) : (
+              "—"
+            )
+          }
         />
       </section>
 
@@ -550,7 +507,8 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           requireEpisodeProgress={
             details.type === "anime" ||
             details.type === "drama" ||
-            details.type === "podcast"
+            details.type === "podcast" ||
+            details.type === "radio"
           }
           onSave={logSession}
         />

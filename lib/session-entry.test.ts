@@ -63,7 +63,7 @@ describe("session entry", () => {
       content: "existing",
       created_at: dateInputToTimestamp("2026-01-01"),
       duration: 5760,
-      progress: { unit: "episode", start: 61, end: 64 },
+      progress: { unit: "episode", start: 61, end: 64, auto: true },
     });
     expect(episodeRange(" 61 - 64 ")).toEqual({ start: 61, end: 64 });
     expect(episodeDurationSeconds({ start: 2, end: 4 }, 25.5)).toBe(4590);
@@ -83,6 +83,32 @@ describe("session entry", () => {
     ).toMatchObject({
       duration: 1500,
       progress: { unit: "episode", start: 61, end: 64 },
+    });
+  });
+  it("logs radio episode ranges with calculated or manually entered duration", () => {
+    const radio = {
+      ...entry,
+      type: "radio" as const,
+      episodes: "3–4",
+      episodeMinutes: "18",
+      hours: "0",
+      minutes: "10",
+    };
+
+    expect(sessionPayload(radio, "radio-show")).toEqual({
+      content: "radio-show",
+      created_at: dateInputToTimestamp("2026-01-01"),
+      duration: 2160,
+      progress: { unit: "episode", start: 3, end: 4, auto: true },
+    });
+    expect(
+      sessionPayload(
+        { ...radio, durationMode: "manual", hours: "0", minutes: "35" },
+        "radio-show",
+      ),
+    ).toMatchObject({
+      duration: 2100,
+      progress: { unit: "episode", start: 3, end: 4, auto: false },
     });
   });
   it.each(["0", "-1", "5-2", "1.5", "1-2-3", "", "9007199254740992"])(
@@ -108,7 +134,7 @@ describe("session entry", () => {
     expect(
       sessionPayload({ ...reading, pageStart: "156", pageEnd: "188" }, "novel")
         .progress,
-    ).toEqual({ unit: "page", start: 156, end: 188 });
+    ).toEqual({ unit: "page", start: 156, end: 188, auto: false });
   });
   it("logs chapter progress for books and audiobooks without deriving duration", () => {
     const book = {

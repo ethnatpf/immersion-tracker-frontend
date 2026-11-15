@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test-fixtures";
+import { createReadingSession } from "./session-helpers";
 
 const hasCredentials =
   existsSync("playwright/credentials.local.json") ||
@@ -22,6 +23,7 @@ for (const viewport of [
 
     test("navigates, creates a reading session, finds its content, and saves an audiovisual session", async ({
       page,
+      trackSessionId,
     }) => {
       const suffix = randomUUID();
       const bookTitle = `E2E reading ${suffix}`;
@@ -55,9 +57,14 @@ for (const viewport of [
       await page.getByRole("spinbutton", { name: "From" }).fill("156");
       await page.getByRole("spinbutton", { name: "To" }).fill("188");
       await expect(page.getByText("33 pages logged")).toBeVisible();
+      const bookSessionResponse = page.waitForResponse((response) =>
+        response.url().includes("/api/backend/immersion-session") &&
+        response.request().method() === "POST",
+      );
       await page
         .getByRole("button", { name: "Save session", exact: true })
         .click();
+      trackSessionId(((await (await bookSessionResponse).json()) as { _id: string })._id);
       await expect(page).toHaveURL("/");
       await expect(
         page.getByText(bookTitle, { exact: true }).filter({ visible: true }),
@@ -101,16 +108,54 @@ for (const viewport of [
         .click();
       await page.getByLabel("Episodes watched").fill("4");
       await expect(page.getByText("00:24:00", { exact: true })).toBeVisible();
+      const animeSessionResponse = page.waitForResponse((response) =>
+        response.url().includes("/api/backend/immersion-session") &&
+        response.request().method() === "POST",
+      );
       await page
         .getByRole("button", { name: "Save session", exact: true })
         .click();
+      trackSessionId(((await (await animeSessionResponse).json()) as { _id: string })._id);
       await expect(page).toHaveURL("/");
-      await expect(
-        page.getByText(animeTitle, { exact: true }).filter({ visible: true }),
-      ).toBeVisible();
       await expect(
         page.getByRole("region", { name: "Total immersion", exact: true }),
       ).toContainText(/\d+:\d{2}:\d{2}/);
+      await page.goto("/history");
+      await page.getByLabel("Search titles").fill(animeTitle);
+      await expect(
+        page.getByRole("link", { name: animeTitle, exact: true }),
+      ).toBeVisible();
     });
   });
 }
+
+test.describe("session logging from content detail", () => {
+  test.use({ storageState: authState });
+  test.skip(
+    !authState,
+    "Set E2E_AUTH_STATE to a signed-in test account's Playwright storage-state file; a real backend with languages is required.",
+  );
+
+  test("logs a session from the content detail dialog", async ({
+    page,
+    trackSessionId,
+  }) => {
+    const title = `E2E detail ${randomUUID()}`;
+    const { contentId, sessionId } = await createReadingSession(page, title);
+    trackSessionId(sessionId);
+    await page.goto(`/content/${contentId}`);
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    await page.getByRole("button", { name: "Log new session" }).click();
+    const dialog = page.getByRole("dialog", { name: "Log new session" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Minutes", { exact: true }).fill("9");
+    const addedSessionResponse = page.waitForResponse((response) =>
+      response.url().includes("/api/backend/immersion-session") &&
+      response.request().method() === "POST",
+    );
+    await dialog.getByRole("button", { name: "Log session", exact: true }).click();
+    trackSessionId(((await (await addedSessionResponse).json()) as { _id: string })._id);
+    await expect(page.getByText("Session saved")).toBeVisible();
+    await expect(page.getByText("2 total recorded sessions")).toBeVisible();
+  });
+});

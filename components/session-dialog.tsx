@@ -256,7 +256,10 @@ export function SessionDialog({
     requireEpisodeProgress || sessionProgress?.unit === "episode";
   const id = useId().replaceAll(":", "");
   const [values, setValues] = useState(() => initialValues(session));
-  const [manualDuration, setManualDuration] = useState(() => !supportsEpisodes);
+  const [manualDuration, setManualDuration] = useState(() =>
+    !supportsEpisodes ||
+    (!requireEpisodeProgress && sessionProgress?.auto !== true),
+  );
   const [progressUnit, setProgressUnit] = useState<ReadingProgressUnit>(() =>
     session.type === "audiobook" || session.progress?.unit === "chapter"
       ? "chapter"
@@ -381,7 +384,7 @@ export function SessionDialog({
         duration = episodeDuration;
         data.duration = duration;
       }
-      data.progress = { unit: "episode", ...range };
+      data.progress = { unit: "episode", ...range, auto: !manualDuration };
     } else if (
       supportsProgress &&
       pageResult.data.pageStart.trim() &&
@@ -391,6 +394,7 @@ export function SessionDialog({
         unit: progressUnit,
         start: Number(pageResult.data.pageStart),
         end: Number(pageResult.data.pageEnd),
+        auto: false,
       };
     }
     setSaving(true);
@@ -524,7 +528,7 @@ export function SessionDialog({
                     className="block text-xs text-muted-foreground"
                     htmlFor={`session-dialog-episodes-${id}`}
                   >
-                    {session.type === "podcast"
+                    {session.type === "podcast" || session.type === "radio"
                       ? "Episodes listened"
                       : "Episodes watched"}
                   </label>
@@ -532,7 +536,7 @@ export function SessionDialog({
                     id={`session-dialog-episodes-${id}`}
                     name="episodes"
                     aria-label={
-                      session.type === "podcast"
+                      session.type === "podcast" || session.type === "radio"
                         ? "Episodes listened"
                         : "Episodes watched"
                     }
@@ -584,7 +588,9 @@ export function SessionDialog({
                       step="any"
                       value={episodeMinutesDraft}
                       placeholder={
-                        session.type === "podcast" ? undefined : "24"
+                        session.type === "podcast" || session.type === "radio"
+                          ? undefined
+                          : "24"
                       }
                       aria-invalid={!!errors.episodeMinutes}
                       aria-describedby={
@@ -615,15 +621,6 @@ export function SessionDialog({
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="text-left text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline sm:col-span-2"
-                  onClick={() => setManualDuration((current) => !current)}
-                >
-                  {manualDuration
-                    ? "Use calculated time"
-                    : "Enter time manually"}
-                </button>
               </div>
             ) : supportsProgress ? (
               <div
@@ -768,6 +765,17 @@ export function SessionDialog({
                   ))}
                 </div>
               </div>
+            )}
+            {supportsEpisodes && (
+              <button
+                type="button"
+                className="text-left text-xs font-medium text-[#4f6f68] underline-offset-4 hover:text-primary hover:underline sm:col-span-2"
+                onClick={() => setManualDuration((current) => !current)}
+              >
+                {manualDuration
+                  ? "Use calculated time"
+                  : "Enter time manually"}
+              </button>
             )}
           </fieldset>
           <footer className="flex flex-col-reverse gap-3 border-t border-border px-6 py-4 sm:flex-row sm:justify-end">

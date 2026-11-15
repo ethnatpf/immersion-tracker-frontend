@@ -128,7 +128,7 @@ export function AppShell({ children, email }: { children: ReactNode; email?: str
         <div className="ml-auto"><ProfileMenu email={email} /></div>
       </header>
       <div className="relative min-h-[calc(100dvh-88px)] bg-[#f6f8f7] md:ml-[220px] md:min-h-dvh">
-        <div className="absolute right-10 top-[38px] hidden md:block"><ProfileMenu email={email} /></div>
+        <div className="absolute right-5 top-4 hidden md:block"><ProfileMenu email={email} /></div>
         <main id="main-content" tabIndex={-1} className="min-w-0 px-5 py-[22px] outline-none md:px-10 md:py-8"><ApiErrorBoundary key={pathname}><TimerFeature ref={timerRef} reduced={timerReduced} onReducedChange={setTimerReduced}>{children}</TimerFeature></ApiErrorBoundary></main>
       </div>
     </div>

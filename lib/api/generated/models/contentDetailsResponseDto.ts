@@ -13,7 +13,8 @@ export interface ContentDetailsResponseDto {
   id: string;
   title: string;
   type: ContentDetailsResponseDtoType;
-  completed: boolean;
+  /** Reference link to the content */
+  url?: string;
   /** Total immersion duration in seconds */
   totalTimeSpent: number;
   /** @nullable */

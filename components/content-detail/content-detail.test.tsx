@@ -2,10 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Toaster } from "@/components/shadcn/sonner";
 import {
   getContentDetailsMockHandler,
-  getContentUpdateMockHandler,
   getImmersionSessionCreateMockHandler,
   getImmersionSessionHistoryMockHandler,
 } from "@/lib/api/generated/immersion.msw";
@@ -15,6 +13,7 @@ import type {
 } from "@/lib/api/generated/models";
 import {
   formatUtcDate,
+  formatUserDate,
   formatUserDateTime,
   getLocalDateInputValue,
   getLocalTimeInputValue,
@@ -27,7 +26,6 @@ const details: ContentDetailsResponseDto = {
   id: "book-1",
   title: "A Japanese novel",
   type: "book",
-  completed: false,
   totalTimeSpent: 45900,
   lastImmersionSession: {
     id: "session-1",
@@ -82,6 +80,14 @@ describe("ContentDetail", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Log new session" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        formatUserDate(
+          details.lastImmersionSession!.created_at,
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ),
+      ),
     ).toBeVisible();
     expect(screen.getByText(/p\. 45–100/)).toBeVisible();
     expect(screen.getAllByText("12:45:00").length).toBeGreaterThan(0);
@@ -337,63 +343,66 @@ describe("ContentDetail", () => {
     },
   );
 
-  it("toggles completion in both directions and refreshes the content details", async () => {
+  it("requires radio episode progress when logging from content detail", async () => {
     const user = userEvent.setup();
-    const updateBodies: unknown[] = [];
-    let isCompleted = false;
+    let createBody: unknown;
     server.use(
-      getContentDetailsMockHandler(() => ({
-        ...details,
-        completed: isCompleted,
-      })),
+      getContentDetailsMockHandler({ ...details, type: "radio" }),
       getImmersionSessionHistoryMockHandler({
         items: [],
         total: 0,
         page: 1,
         limit: 5,
       }),
-      getContentUpdateMockHandler(async ({ request }) => {
-        const body = await request.json();
-        updateBodies.push(body);
-        isCompleted = Boolean((body as { completed: boolean }).completed);
+      getImmersionSessionCreateMockHandler(async ({ request }) => {
+        createBody = await request.json();
         return {
-          _id: details.id,
-          title: details.title,
-          type: details.type,
-          user_id: "reader",
+          _id: "new-radio-session",
+          content: "book-1",
           language: "ja",
-          completed: isCompleted,
+          content_type: "radio",
+          user_id: "reader",
+          created_at: "2026-10-28T00:00:00.000Z",
+          duration: 1800,
+          progress: { unit: "episode", start: 1, end: 1 },
         };
       }),
     );
+    renderWithQuery(<ContentDetail contentId="book-1" />);
 
-    renderWithQuery(
-      <>
-        <ContentDetail contentId="book-1" />
-        <Toaster />
-      </>,
-    );
-    await user.click(
-      await screen.findByRole("button", { name: "Mark book as completed" }),
-    );
-
-    await waitFor(() => expect(updateBodies).toEqual([{ completed: true }]));
-    expect(await screen.findByText("Completed")).toBeVisible();
+    await user.click(await screen.findByRole("button", { name: "Log new session" }));
+    const dialog = await screen.findByRole("dialog", { name: "Log new session" });
     expect(
-      await screen.findByText("Content marked as completed"),
+      within(dialog).getByRole("textbox", { name: "Episodes listened" }),
     ).toBeVisible();
+    expect(
+      within(dialog).getByRole("spinbutton", { name: "Episode duration" }),
+    ).toHaveValue(null);
 
-    await user.click(
-      screen.getByRole("button", { name: "Mark book as in progress" }),
+    await user.click(within(dialog).getByRole("button", { name: "Log session" }));
+    expect(
+      await within(dialog).findByText(
+        "Enter an episode number or range, such as 4 or 61–64.",
+      ),
+    ).toBeVisible();
+    expect(createBody).toBeUndefined();
+
+    await user.type(
+      within(dialog).getByRole("textbox", { name: "Episodes listened" }),
+      "1",
     );
-
+    await user.type(
+      within(dialog).getByRole("spinbutton", { name: "Episode duration" }),
+      "30",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Log session" }));
     await waitFor(() =>
-      expect(updateBodies).toEqual([{ completed: true }, { completed: false }]),
+      expect(createBody).toMatchObject({
+        content: "book-1",
+        duration: 1800,
+        progress: { unit: "episode", start: 1, end: 1 },
+      }),
     );
-    expect(await screen.findByText("In progress")).toBeVisible();
-    expect(
-      await screen.findByText("Content moved back to in progress"),
-    ).toBeVisible();
   });
 
   it("shows an empty state when content has no immersion sessions", async () => {

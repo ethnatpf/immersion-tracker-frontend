@@ -19,4 +19,6 @@ export interface SessionProgressResponseDto {
      * @minimum 1
      */
   end: number;
+  /** Whether the session duration was automatically calculated from this progress */
+  auto?: boolean;
 }

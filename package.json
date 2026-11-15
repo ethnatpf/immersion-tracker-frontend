@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "api:generate": "orval --config orval.config.ts",
-    "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --project unit --passWithNoTests",
     "test:integration": "vitest run --project integration",

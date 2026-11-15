@@ -35,7 +35,6 @@ const content: ContentResponseDto = {
   title: "Kitchen",
   language: "language-ja",
   type: "book",
-  completed: false,
   user_id: "reader",
 };
 const saved: ImmersionSessionResponseDto = {
@@ -288,6 +287,39 @@ describe("session entry form", () => {
     expect(creates[0]).toMatchObject({ title: "Lecture", type: "video" });
     expect(writes[0]).toMatchObject({ duration: 2100 });
     expect(writes[0].progress).toBeUndefined();
+  });
+  it("logs radio episode progress with a manually entered total duration", async () => {
+    renderWithQuery(<SessionEntryForm />);
+    const user = userEvent.setup();
+    await screen.findByText("Japanese (日本語)");
+    await user.click(
+      within(screen.getByRole("group", { name: "Content category" })).getByRole(
+        "button",
+        { name: /^Audio4 types$/ },
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Radio" }));
+    await user.type(
+      screen.getByRole("combobox", { name: "Title / search" }),
+      "Morning show",
+    );
+    await user.click(
+      await screen.findByRole("option", { name: /Create.*Morning show/ }),
+    );
+    await user.type(screen.getByLabelText("Episodes listened"), "3–4");
+    await user.click(
+      screen.getByRole("button", { name: "Enter time manually" }),
+    );
+    await user.clear(screen.getByLabelText("Minutes"));
+    await user.type(screen.getByLabelText("Minutes"), "35");
+    await user.click(screen.getByRole("button", { name: "Save session" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/"));
+    expect(creates[0]).toMatchObject({ title: "Morning show", type: "radio" });
+    expect(writes[0]).toMatchObject({
+      duration: 2100,
+      progress: { unit: "episode", start: 3, end: 4, auto: false },
+    });
   });
   it("keeps anime episode progress when duration is entered manually", async () => {
     renderWithQuery(<SessionEntryForm />);

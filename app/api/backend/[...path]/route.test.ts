@@ -124,7 +124,7 @@ describe("authenticated API proxy", () => {
     );
   });
 
-  it("forwards content detail reads and completion updates", async () => {
+  it("forwards content detail reads and title updates", async () => {
     const contentId = "content-123";
     const details = await GET(
       new Request(`http://frontend.test/api/backend/content/${contentId}`),
@@ -139,13 +139,15 @@ describe("authenticated API proxy", () => {
       new Request(`http://frontend.test/api/backend/content/${contentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: true }),
+        body: JSON.stringify({ title: "Updated title" }),
       }),
       context(`content/${contentId}`),
     );
     expect(updated.status).toBe(200);
     expect(upstream.mock.calls[1][1].method).toBe("PATCH");
-    expect(JSON.parse(upstream.mock.calls[1][1].body)).toEqual({ completed: true });
+    expect(JSON.parse(upstream.mock.calls[1][1].body)).toEqual({
+      title: "Updated title",
+    });
   });
 
   it.each(["content", "immersion-session"])(
