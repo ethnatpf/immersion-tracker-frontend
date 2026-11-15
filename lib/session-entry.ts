@@ -68,7 +68,12 @@ export function isReading(type: CreateContentDtoType) {
 }
 
 export function usesEpisodeProgress(type: CreateContentDtoType) {
-  return type === "anime" || type === "drama" || type === "podcast";
+  return (
+    type === "anime" ||
+    type === "drama" ||
+    type === "podcast" ||
+    type === "radio"
+  );
 }
 
 export function usesManualDuration(type: CreateContentDtoType) {

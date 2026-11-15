@@ -6,7 +6,7 @@ import { dateInputToTimestamp } from "@/lib/date";
 import { renderWithQuery } from "@/test/render";
 
 describe("session dialog", () => {
-  it.each(["anime", "podcast", "drama"] as const)(
+  it.each(["anime", "podcast", "radio", "drama"] as const)(
     "opens an existing %s session without progress in manual duration mode and preserves its duration when progress is added",
     async (type) => {
       const user = userEvent.setup();
@@ -33,7 +33,10 @@ describe("session dialog", () => {
       ).toBeVisible();
       await user.type(
         screen.getByRole("textbox", {
-          name: type === "podcast" ? "Episodes listened" : "Episodes watched",
+          name:
+            type === "podcast" || type === "radio"
+              ? "Episodes listened"
+              : "Episodes watched",
         }),
         "2–3",
       );
@@ -105,6 +108,39 @@ describe("session dialog", () => {
         created_at: dateInputToTimestamp("2026-10-24"),
         duration: 1440,
         progress: { unit: "episode", start: 12, end: 12, auto: true },
+      }),
+    );
+  });
+
+  it("logs a new radio session with calculated episode time when requested", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn(async () => {});
+    renderWithQuery(
+      <SessionDialog
+        session={{
+          type: "radio",
+          title: "Evening radio",
+          created_at: dateInputToTimestamp("2026-10-24"),
+          duration: 0,
+        }}
+        open
+        onOpenChange={vi.fn()}
+        title="Log new session"
+        saveLabel="Log session"
+        requireEpisodeProgress
+        onSave={onSave}
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Episodes listened" }), "12–13");
+    await user.type(screen.getByRole("spinbutton", { name: "Episode duration" }), "18");
+    await user.click(screen.getByRole("button", { name: "Log session" }));
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith({
+        created_at: dateInputToTimestamp("2026-10-24"),
+        duration: 2160,
+        progress: { unit: "episode", start: 12, end: 13, auto: true },
       }),
     );
   });

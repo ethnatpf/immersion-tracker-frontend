@@ -85,6 +85,32 @@ describe("session entry", () => {
       progress: { unit: "episode", start: 61, end: 64 },
     });
   });
+  it("logs radio episode ranges with calculated or manually entered duration", () => {
+    const radio = {
+      ...entry,
+      type: "radio" as const,
+      episodes: "3–4",
+      episodeMinutes: "18",
+      hours: "0",
+      minutes: "10",
+    };
+
+    expect(sessionPayload(radio, "radio-show")).toEqual({
+      content: "radio-show",
+      created_at: dateInputToTimestamp("2026-01-01"),
+      duration: 2160,
+      progress: { unit: "episode", start: 3, end: 4, auto: true },
+    });
+    expect(
+      sessionPayload(
+        { ...radio, durationMode: "manual", hours: "0", minutes: "35" },
+        "radio-show",
+      ),
+    ).toMatchObject({
+      duration: 2100,
+      progress: { unit: "episode", start: 3, end: 4, auto: false },
+    });
+  });
   it.each(["0", "-1", "5-2", "1.5", "1-2-3", "", "9007199254740992"])(
     "rejects invalid episode input %s",
     (episodes) => {

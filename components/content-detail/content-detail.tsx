@@ -491,7 +491,8 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           requireEpisodeProgress={
             details.type === "anime" ||
             details.type === "drama" ||
-            details.type === "podcast"
+            details.type === "podcast" ||
+            details.type === "radio"
           }
           onSave={logSession}
         />
