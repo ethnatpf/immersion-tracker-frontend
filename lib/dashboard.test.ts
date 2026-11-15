@@ -25,6 +25,7 @@ describe("dashboard presentation", () => {
       total_immersion_time: 0,
       average_time: 0,
       reading_time: 11_700,
+      audiovisual_time: 0,
       breakdown: [
         { start_date: "2026-10-26", reading_time: 0, audiovisual_time: 0, audio_time: 0 },
         { start_date: "2026-11-02", reading_time: 0, audiovisual_time: 0, audio_time: 0 },
@@ -43,6 +44,7 @@ describe("dashboard presentation", () => {
       total_immersion_time: 0,
       average_time: 0,
       reading_time: 1200,
+      audiovisual_time: 0,
       breakdown: [
         { start_date: "2025-11-01", reading_time: 0, audiovisual_time: 0, audio_time: 0 },
         { start_date: "2025-12-01", reading_time: 0, audiovisual_time: 0, audio_time: 0 },
