@@ -130,12 +130,12 @@ function SummaryMetric({
   icon: typeof Clock3;
 }) {
   return (
-    <Card className="relative min-h-[124px] gap-0 rounded-2xl border border-border bg-white p-5 ring-0 md:min-h-[140px]">
+    <Card className="relative min-h-[124px] gap-0 rounded-2xl border border-border bg-white p-5 ring-0 md:min-h-[140px] md:justify-between">
       <p className="text-xs text-muted-foreground">{title}</p>
-      <p className="mt-4 pr-12 text-[30px] font-semibold leading-9 tracking-tight tabular-nums md:text-[32px]">
+      <p className="mt-2 pr-12 text-[30px] font-semibold leading-9 tracking-tight tabular-nums md:mt-0 md:text-[32px]">
         {value}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-1 text-xs text-muted-foreground md:mt-0">{detail}</p>
       <span className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-xl bg-[#e8f4ee] text-primary">
         <Icon aria-hidden="true" className="size-5" />
       </span>
@@ -345,7 +345,7 @@ export function ContentDetail({ contentId }: { contentId: string }) {
           <Button
             type="button"
             onClick={() => setLogSessionOpen(true)}
-            className="order-1 col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring md:order-3 md:col-span-1 md:px-5"
+            className="order-1 col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring md:col-span-1 md:px-5"
           >
             <Plus aria-hidden="true" className="size-[18px]" />
             Log new session
@@ -359,7 +359,7 @@ export function ContentDetail({ contentId }: { contentId: string }) {
                 type: details.type,
             }, { immediate: true })
             }
-            className="order-2 h-12 gap-2 rounded-lg bg-white px-2 text-[13px] font-semibold sm:px-4 sm:text-sm md:order-2 md:px-6"
+            className="order-2 col-span-2 h-12 gap-2 rounded-lg bg-white px-2 text-[13px] font-semibold sm:px-4 sm:text-sm md:col-span-1 md:px-6"
           >
             <Timer aria-hidden="true" className="size-4 text-primary" />
             Start timer
@@ -383,9 +383,15 @@ export function ContentDetail({ contentId }: { contentId: string }) {
               ? "Last read"
               : "Last session"
           }
-          value={lastSession ? <LocalizedDate date={lastSession.created_at} /> : "—"}
           detail={lastDetail}
           icon={CalendarDays}
+          value={
+            lastSession ? (
+              <LocalizedDate date={lastSession.created_at} dateOnly />
+            ) : (
+              "—"
+            )
+          }
         />
       </section>
 

@@ -106,6 +106,15 @@ export function formatUserDateTime(date: string, timeZone = getUserTimeZone()) {
   }).format(new Date(date));
 }
 
+export function formatUserDate(date: string, timeZone = getUserTimeZone()) {
+  return new Intl.DateTimeFormat("en", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone,
+  }).format(new Date(date));
+}
+
 export function formatCompactUserDate(
   date: string,
   timeZone = getUserTimeZone(),

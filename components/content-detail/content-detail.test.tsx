@@ -13,6 +13,7 @@ import type {
 } from "@/lib/api/generated/models";
 import {
   formatUtcDate,
+  formatUserDate,
   formatUserDateTime,
   getLocalDateInputValue,
   getLocalTimeInputValue,
@@ -79,6 +80,14 @@ describe("ContentDetail", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Log new session" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        formatUserDate(
+          details.lastImmersionSession!.created_at,
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ),
+      ),
     ).toBeVisible();
     expect(screen.getByText(/p\. 45–100/)).toBeVisible();
     expect(screen.getAllByText("12:45:00").length).toBeGreaterThan(0);

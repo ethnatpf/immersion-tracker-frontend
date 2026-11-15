@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   dateInputToTimestamp,
   dateTimeInputToTimestamp,
+  formatUserDate,
   formatUserDateTime,
   isLocalDateTimeInPastOrPresent,
   isValidLocalDateTimeInput,
@@ -64,5 +65,10 @@ describe("session dates", () => {
   it("formats an instant in the requested user timezone", () => {
     expect(formatUserDateTime("2026-10-24T01:00:00.000Z", "America/Los_Angeles"))
       .toBe("Oct 23, 2026, 6:00 PM");
+  });
+
+  it("formats an instant as a date in the requested user timezone", () => {
+    expect(formatUserDate("2026-10-24T01:00:00.000Z", "America/Los_Angeles"))
+      .toBe("Oct 23, 2026");
   });
 });
